@@ -1,38 +1,11 @@
 import matplotlib
 from matplotlib import pyplot as plt
 import numpy as np
-import json
-import os
-import math
-import random
-import pprint
 import time
+from useful_funcs import PointGrab
 s_time = time.process_time()
 
-class PointGrab:
-    def __init__(self, setname):
-        path = os.getcwd() + "\\point_sets\\" + setname
-        found = False
-        try:
-            with open(path, "r") as f:
-                self.bundle = json.load(f)
-                found = True
-        except FileNotFoundError:
-            print('That banner does not exist.')
-            quit()
-        if found:
-            self.sep()
-
-    def sep(self):
-        self.xpoints = self.bundle['xpoints']
-        self.ypoints = self.bundle['ypoints']
-        self.costs = self.bundle['costs']
-        self.colors = self.bundle['colors']
-        self.names = self.bundle['names']
-        self.d_matrix = np.array(self.bundle['d_matrix'])
-        
-points_to_use = input('Enter a testing set identifier: ')
-point_set = PointGrab(points_to_use)
+point_set = PointGrab()
 
 def fresh_edge(previous, visited, d_matrix):
     adjacent = d_matrix[previous][:]
