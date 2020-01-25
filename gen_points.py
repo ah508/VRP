@@ -34,7 +34,7 @@ class Tracker:
                     self.d_matrix[i][j] = dist
         self.d_matrix = self.d_matrix.tolist()
 point_set = Tracker()
-for i in range(1, 40):
+for i in range(1, 1000):
     identifier = str(i)
     nogo = True
     while nogo:

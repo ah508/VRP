@@ -60,29 +60,32 @@ class GENI:
 
     def reverse(self, edges, start, end):
         holding = edges.copy()
-        holding[edges[start]] = start
-        next_edge = edges[start]
-        proceed = True
-        i = 0
-        while proceed:
-            if next_edge == end:
-                proceed = False
-            holding[edges[next_edge]] = next_edge
-            next_edge = edges[next_edge]
-            if next_edge == end:
-                proceed = False
-            if i > 20000:
-                print('arbitrary limit exceeded, killing program')
-                quit()
-            i += 1
+        self.reverse_recurse(holding, start, end)
         return holding
 
-    def test_valid(self):
+    def reverse_recurse(self, edges, start, end):
+        tail = self.find_successor(start, edges)
+        if tail == end:
+            edges[end] = start
+            return start
+        else:
+            new_end = self.reverse_recurse(edges, tail, end)
+            edges[new_end] = start
+            return start
+
+    def test_valid(self, edgeset):
         tester = set()
-        for i in self.edges:
+        for i in edgeset:
             if i in tester and i != None:
                 print('invalid construction!')
+                print(edgeset)
+                return False
+            if i == edgeset.index(i):
+                print('formed a loop!')
+                print(edgeset)
+                return False
             tester.add(i)
+        return True
 
     def circuit_cost(self, circuit):
         cost = 0
@@ -91,8 +94,10 @@ class GENI:
                 cost += self.dist[vertex, pointer]
         return cost
 
-    def edge_cost(self, v1, v2):
-        return self.dist[v1, v2]
+    def points_between(self, edges, v1, v2):
+        if v1 == v2:
+            return []
+        return [v1] + self.points_between(edges, self.find_successor(v1, edges), v2)
         
     def initialize(self):
         self.swap(0)
@@ -104,7 +109,6 @@ class GENI:
         self.edges[v1] = v2
         self.edges[v2] = 0
         self.route_cost = self.circuit_cost(self.edges)
-        # print(self.route_cost)
         self.history.append(self.edges)
         self.get_neighborhoods(5)
 
@@ -113,8 +117,8 @@ class GENI:
             chosen_vertex = r.choice(self.offroute)
             self.insert_vertex(chosen_vertex)
             self.get_neighborhoods(5)
-            print("still choochin'")
-            print(self.edges)
+            print("+")
+            # print(self.edges)
 
     def insert_vertex(self, vertex):
         possible_moves = {}
@@ -127,27 +131,37 @@ class GENI:
                 vi1 = self.find_successor(i, d_set)
                 for j in vj:
                     if i == j:
-                        possible_moves[move_key] = self.standard_insert(d_set, i, vi1, vertex)
+                        continue
+                    # if i == j:
+                    #     possible_moves[move_key] = self.standard_insert(d_set, i, vi1, vertex)
+                    #     move_key += 1
+                    # else:
+                    j_to_i = self.points_between(d_set, j, i)
+                    i_to_j = self.points_between(d_set, i, j)
+                    vj1 = self.find_successor(j, d_set)
+                    vk = self.p_neighborhood[vi1]
+                    vl = self.p_neighborhood[vj1]
+                    for k in vk:
+                        if j == k:
+                            continue
+                        if k not in j_to_i:
+                            continue
+                        possible_moves[move_key] = self.t1_insert(d_set, i, j, k, vertex)
                         move_key += 1
-                    else:  
-                        vj1 = self.find_successor(j, d_set)
-                        vk = self.p_neighborhood[vi1]
-                        vl = self.p_neighborhood[vj1]
-                        for k in vk:
-                            if k != i and k != j:
-                                if j != vi1 and k!= vj1:
-                                    possible_moves[move_key] = self.t1_insert(d_set, i, j, k, vertex)
-                                    move_key += 1
-                            for l in vl:
-                                if k != j and k != vj1 and l != i and l != vi1:
-                                    possible_moves[move_key] = self.t2_insert(d_set, i, j, k, l, vertex)
-                                    move_key += 1
-                                print('.')
+                        for l in vl:
+                            if i == l:
+                                continue
+                            if l not in i_to_j:
+                                continue
+                            if k != vj1 and l != vi1:
+                                possible_moves[move_key] = self.t2_insert(d_set, i, j, k, l, vertex)
+                                move_key += 1
         min_pair = ['x', math.inf]
         for key in possible_moves.keys():
-            # print(possible_moves[key]['cost'])
-            if possible_moves[key]['cost'] <= min_pair[1]:
-                min_pair = [key, possible_moves[key]['cost']]
+            if possible_moves[key] != None:
+                # print(possible_moves[key]['cost'])
+                if possible_moves[key]['cost'] <= min_pair[1]:
+                    min_pair = [key, possible_moves[key]['cost']]
         self.swap(vertex)
         self.execute_move(possible_moves[min_pair[0]])
         possible_moves = {}
@@ -175,25 +189,30 @@ class GENI:
             neighborhood = self.p_neighbors(vertex, p)
             self.p_neighborhood[vertex] = neighborhood
 
-    def standard_insert(self, pointers, i, i1, v):
-        move = {}
-        move['frame'] = pointers.copy()
-        move['frame'][i] = v
-        move['frame'][v] = i1
-        # print(move['frame'])
-        move['cost'] = self.circuit_cost(move['frame'])
-        return move
+    # def standard_insert(self, pointers, i, i1, v):
+    #     move = {}
+    #     move['frame'] = pointers.copy()
+    #     move['frame'][i] = v
+    #     move['frame'][v] = i1
+    #     # print(move['frame'])
+    #     move['cost'] = self.circuit_cost(move['frame'])
+    #     return move
 
     def t1_insert(self, pointers, i, j, k, v):
         move = {}
         successor = self.find_successor([i, j, k], pointers)
         move['frame'] = pointers.copy()
-        move['frame'] = self.reverse(move['frame'], successor[i], j)
-        move['frame'] = self.reverse(move['frame'], successor[j], k)
+        if successor[i] != j:
+            move['frame'] = self.reverse(move['frame'], successor[i], j)
+        if successor[j] != k:
+            move['frame'] = self.reverse(move['frame'], successor[j], k)
         move['frame'][i] = v
         move['frame'][v] = j
         move['frame'][successor[i]] = k
         move['frame'][successor[j]] = successor[k]
+        test = self.test_valid(move['frame'])
+        if not test:
+            return None
         move['cost'] = self.circuit_cost(move['frame'])
         return move
     
@@ -202,13 +221,18 @@ class GENI:
         successor = self.find_successor([i, j], pointers)
         predecessor = self.find_predecessor([k, l], pointers)
         move['frame'] = pointers.copy()
-        move['frame'] = self.reverse(move['frame'], successor[i], predecessor[l])
-        move['frame'] = self.reverse(move['frame'], l, j)
+        if successor[i] != predecessor[l]:
+            move['frame'] = self.reverse(move['frame'], successor[i], predecessor[l])
+        if l != j:
+            move['frame'] = self.reverse(move['frame'], l, j)
         move['frame'][i] = v
         move['frame'][v] = j
         move['frame'][l] = successor[j]
         move['frame'][predecessor[k]] = predecessor[l]
         move['frame'][successor[i]] = k
+        test = self.test_valid(move['frame'])
+        if not test:
+            return None
         move['cost'] = self.circuit_cost(move['frame'])
         return move
          
