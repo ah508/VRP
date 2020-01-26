@@ -90,10 +90,10 @@ class GENIUS:
                 return False
             try:
                 if edgeset[i] == None:
-                    # print('invalid pointer')
-                    # print(f'flag: {indicator}')
-                    # print(edgeset)
-                    # input(':')
+                    print('invalid pointer')
+                    print(f'flag: {indicator}')
+                    print(edgeset)
+                    input(':')
                     return False
             except TypeError:
                 pass
@@ -144,7 +144,6 @@ class GENIUS:
         else:
             direct = [edgeset, self.reverse(edgeset, 0, 0)]
         for d_set in direct:
-            # d_diff = self.circuit_cost(d_set) - self.route_cost
             for i in vi:
                 if i == vertex:
                     continue
@@ -287,27 +286,22 @@ class GENIUS:
             for j in vj:
                 if j == vi:
                     continue
-                i1_to_j = self.points_between(d_set, vi1, j)
+                if j == vip:
+                    continue
                 vj1 = self.find_successor(j, d_set)
+                i1_to_j = self.points_between(d_set, vi1, j)
                 j1_to_i = self.points_between(d_set, vj1, vi)
                 vk = self.p_neighborhood[vip]
                 for k in vk:
                     if k == vi:
                         continue
-                    # if j == k:
-                    #     continue
-                    vk1 = self.find_successor(k, d_set)
                     if k in i1_to_j:
                         move = self.t1_unstring(d_set, j, k, vi)
-                        # print(move)
-                        # print([j, k, vi])
-                        # print(d_set)
-                        # input('-')
                         if move:
                             possible_moves[move_key] = self.insert_vertex(vi, move, direction=True)
-                        # input(':')
                             move_key += 1
                     if k in j1_to_i:
+                        vk1 = self.find_successor(k, d_set)
                         vl = self.p_neighborhood[vk1]
                         j_to_k = self.points_between(d_set, j, k)
                         for l in vl:
@@ -317,11 +311,8 @@ class GENIUS:
                                 continue
                             if k != vj1 and l != vi1:
                                 move = self.t2_unstring(d_set, j, k, l, vi)
-                                # print(move)
-                                # input('+')
                                 if move:
                                     possible_moves[move_key] = self.insert_vertex(vi, move, direction=True)
-                                # input(':')
                                     move_key += 1
         min_pair = ['x', math.inf]
         for key in possible_moves.keys():
@@ -331,8 +322,8 @@ class GENIUS:
         return possible_moves[min_pair[0]]['frame'], min_pair[1]
 
     def t1_unstring(self, pointers, j, k, v):
-        successor = self.find_successor([j, k, v], pointers)
-        predecessor = self.find_predecessor([j, k, v], pointers)
+        successor = self.find_successor([v, j, k], pointers)
+        predecessor = self.find_predecessor([v, j, k], pointers)
         move = pointers.copy()
         if successor[v] != k:
             move = self.reverse(move, successor[v], k)
@@ -342,7 +333,7 @@ class GENIUS:
         move[successor[v]] = j
         move[successor[k]] = successor[j]
         move[v] = None
-        test = self.test_valid(move, indicator='-')
+        test = self.test_valid(move, indicator='+')
         if not test:
             return None
         return move
