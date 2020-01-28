@@ -2,7 +2,7 @@ import matplotlib
 from matplotlib import pyplot as plt
 import numpy as np
 import time
-from genius_test import GENI
+from genius_test import GENIUS
 from useful_funcs import PointGrab
 s_time = time.process_time()
 

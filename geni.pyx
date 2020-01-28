@@ -1,3 +1,4 @@
+
 import matplotlib
 from matplotlib import pyplot as plt
 import numpy as np
@@ -5,7 +6,6 @@ import random as r
 import math
 import time
 import heapq
-from proc_func import find_predecessor, find_successor, reverse, points_between, test_valid
 
 class GENIUS:
     def __init__(self, points):
@@ -29,77 +29,77 @@ class GENIUS:
             self.onroute.remove(vertex)
             self.offroute.append(vertex)
 
-    # def find_successor(self, vertex, edges):
-    #     if isinstance(vertex, int) or isinstance(vertex, np.int64):
-    #         return edges[vertex]
-    #     elif isinstance(vertex, list):
-    #         successors = {}
-    #         for point in vertex:
-    #             successors[point] = edges[point]
-    #         return successors
-    #     else:
-    #         print('oops, something went wrong with finding successors.')
-    #         print(type(vertex))
-    #         input(':')
-    #         return None
+    def find_successor(self, vertex, edges):
+        if isinstance(vertex, int) or isinstance(vertex, np.int64):
+            return edges[vertex]
+        elif isinstance(vertex, list):
+            successors = {}
+            for point in vertex:
+                successors[point] = edges[point]
+            return successors
+        else:
+            print('oops, something went wrong with finding successors.')
+            print(type(vertex))
+            input(':')
+            return None
 
-    # def find_predecessor(self, vertex, edges):
-    #     if isinstance(vertex, int) or isinstance(vertex, np.int64):
-    #         return edges.index(vertex)
-    #     elif isinstance(vertex, list):
-    #         predecessors = {}
-    #         for point in vertex:
-    #             predecessors[point] = edges.index(point)
-    #         return predecessors
-    #     else:
-    #         print('oops, something went wrong with finding predecessors.')
-    #         print(type(vertex))
-    #         input(':')
-    #         return None
+    def find_predecessor(self, vertex, edges):
+        if isinstance(vertex, int) or isinstance(vertex, np.int64):
+            return edges.index(vertex)
+        elif isinstance(vertex, list):
+            predecessors = {}
+            for point in vertex:
+                predecessors[point] = edges.index(point)
+            return predecessors
+        else:
+            print('oops, something went wrong with finding predecessors.')
+            print(type(vertex))
+            input(':')
+            return None
 
-    # def reverse(self, edges, start, end):
-    #     holding = edges.copy()
-    #     self.reverse_recurse(holding, start, end)
-    #     return holding
-    #     #might be improved by just returning a diff
-    #     #would remove this as a middleman
+    def reverse(self, edges, start, end):
+        holding = edges.copy()
+        self.reverse_recurse(holding, start, end)
+        return holding
+        #might be improved by just returning a diff
+        #would remove this as a middleman
 
-    # def reverse_recurse(self, edges, start, end):
-    #     tail = self.find_successor(start, edges)
-    #     if tail == end:
-    #         edges[end] = start
-    #         return start
-    #     else:
-    #         new_end = self.reverse_recurse(edges, tail, end)
-    #         edges[new_end] = start
-    #         return start
+    def reverse_recurse(self, edges, start, end):
+        tail = self.find_successor(start, edges)
+        if tail == end:
+            edges[end] = start
+            return start
+        else:
+            new_end = self.reverse_recurse(edges, tail, end)
+            edges[new_end] = start
+            return start
 
-    # def test_valid(self, edgeset, indicator='+'):
-    #     tester = set()
-    #     for i in edgeset:
-    #         if i in tester and i != None:
-    #             print('invalid construction!')
-    #             print(f'flag: {indicator}')
-    #             print(edgeset)
-    #             input(':')
-    #             return False
-    #         if i == edgeset.index(i):
-    #             print('formed a loop!')
-    #             print(f'flag: {indicator}')
-    #             print(edgeset)
-    #             input(':')
-    #             return False
-    #         try:
-    #             if edgeset[i] == None:
-    #                 print('invalid pointer')
-    #                 print(f'flag: {indicator}')
-    #                 print(edgeset)
-    #                 input(':')
-    #                 return False
-    #         except TypeError:
-    #             pass
-    #         tester.add(i)
-    #     return True
+    def test_valid(self, edgeset, indicator='+'):
+        tester = set()
+        for i in edgeset:
+            if i in tester and i != None:
+                print('invalid construction!')
+                print(f'flag: {indicator}')
+                print(edgeset)
+                input(':')
+                return False
+            if i == edgeset.index(i):
+                print('formed a loop!')
+                print(f'flag: {indicator}')
+                print(edgeset)
+                input(':')
+                return False
+            try:
+                if edgeset[i] == None:
+                    print('invalid pointer')
+                    print(f'flag: {indicator}')
+                    print(edgeset)
+                    input(':')
+                    return False
+            except TypeError:
+                pass
+            tester.add(i)
+        return True
 
     def circuit_cost(self, circuit):
         cost = 0
@@ -108,10 +108,10 @@ class GENIUS:
                 cost += self.dist[vertex, pointer]
         return cost
 
-    # def points_between(self, edges, v1, v2):
-    #     if v1 == v2:
-    #         return []
-    #     return [v1] + self.points_between(edges, find_successor(v1, edges), v2)
+    def points_between(self, edges, v1, v2):
+        if v1 == v2:
+            return []
+        return [v1] + self.points_between(edges, self.find_successor(v1, edges), v2)
         
     def initialize(self):
         self.swap(0)
@@ -143,20 +143,20 @@ class GENIUS:
         if direction:
             direct = [edgeset]
         else:
-            direct = [edgeset, reverse(edgeset, 0, 0)]
+            direct = [edgeset, self.reverse(edgeset, 0, 0)]
         for d_set in direct:
             for i in vi:
                 if i == vertex:
                     continue
-                vi1 = find_successor(i, d_set)
+                vi1 = self.find_successor(i, d_set)
                 for j in vj:
                     if j == vertex:
                         continue
                     if i == j:
                         continue
-                    j_to_i = points_between(d_set, j, i)
-                    i_to_j = points_between(d_set, i, j)
-                    vj1 = find_successor(j, d_set)
+                    j_to_i = self.points_between(d_set, j, i)
+                    i_to_j = self.points_between(d_set, i, j)
+                    vj1 = self.find_successor(j, d_set)
                     vk = self.p_neighborhood[vi1]
                     vl = self.p_neighborhood[vj1]
                     for k in vk:
@@ -216,17 +216,17 @@ class GENIUS:
 
     def t1_string(self, pointers, i, j, k, v):
         move = {}
-        successor = find_successor([i, j, k], pointers)
+        successor = self.find_successor([i, j, k], pointers)
         move['frame'] = pointers.copy()
         if successor[i] != j:
-            move['frame'] = reverse(move['frame'], successor[i], j)
+            move['frame'] = self.reverse(move['frame'], successor[i], j)
         if successor[j] != k:
-            move['frame'] = reverse(move['frame'], successor[j], k)
+            move['frame'] = self.reverse(move['frame'], successor[j], k)
         move['frame'][i] = v
         move['frame'][v] = j
         move['frame'][successor[i]] = k
         move['frame'][successor[j]] = successor[k]
-        test = test_valid(move['frame'])
+        test = self.test_valid(move['frame'])
         if not test:
             return None
         move['cost'] = self.circuit_cost(move['frame'])
@@ -234,19 +234,19 @@ class GENIUS:
     
     def t2_string(self, pointers, i, j, k, l, v):
         move = {}
-        successor = find_successor([i, j], pointers)
-        predecessor = find_predecessor([k, l], pointers)
+        successor = self.find_successor([i, j], pointers)
+        predecessor = self.find_predecessor([k, l], pointers)
         move['frame'] = pointers.copy()
         if successor[i] != predecessor[l]:
-            move['frame'] = reverse(move['frame'], successor[i], predecessor[l])
+            move['frame'] = self.reverse(move['frame'], successor[i], predecessor[l])
         if l != j:
-            move['frame'] = reverse(move['frame'], l, j)
+            move['frame'] = self.reverse(move['frame'], l, j)
         move['frame'][i] = v
         move['frame'][v] = j
         move['frame'][l] = successor[j]
         move['frame'][predecessor[k]] = predecessor[l]
         move['frame'][successor[i]] = k
-        test = test_valid(move['frame'])
+        test = self.test_valid(move['frame'])
         if not test:
             return None
         move['cost'] = self.circuit_cost(move['frame'])
@@ -280,18 +280,18 @@ class GENIUS:
     def reinsert_vertex(self, vi, edgeset):
         possible_moves = {}
         move_key = 0
-        for d_set in [edgeset, reverse(edgeset, 0, 0)]:
-            vi1 = find_successor(vi, d_set)
-            vip = find_predecessor(vi, d_set)
+        for d_set in [edgeset, self.reverse(edgeset, 0, 0)]:
+            vi1 = self.find_successor(vi, d_set)
+            vip = self.find_predecessor(vi, d_set)
             vj = self.p_neighborhood[vi1]
             for j in vj:
                 if j == vi:
                     continue
                 if j == vip:
                     continue
-                vj1 = find_successor(j, d_set)
-                i1_to_j = points_between(d_set, vi1, j)
-                j1_to_i = points_between(d_set, vj1, vi)
+                vj1 = self.find_successor(j, d_set)
+                i1_to_j = self.points_between(d_set, vi1, j)
+                j1_to_i = self.points_between(d_set, vj1, vi)
                 vk = self.p_neighborhood[vip]
                 for k in vk:
                     if k == vi:
@@ -302,9 +302,9 @@ class GENIUS:
                             possible_moves[move_key] = self.insert_vertex(vi, move, direction=True)
                             move_key += 1
                     if k in j1_to_i:
-                        vk1 = find_successor(k, d_set)
+                        vk1 = self.find_successor(k, d_set)
                         vl = self.p_neighborhood[vk1]
-                        j_to_k = points_between(d_set, j, k)
+                        j_to_k = self.points_between(d_set, j, k)
                         for l in vl:
                             if vi == l:
                                 continue
@@ -323,36 +323,36 @@ class GENIUS:
         return possible_moves[min_pair[0]]['frame'], min_pair[1]
 
     def t1_unstring(self, pointers, j, k, v):
-        successor = find_successor([v, j, k], pointers)
-        predecessor = find_predecessor([v, j, k], pointers)
+        successor = self.find_successor([v, j, k], pointers)
+        predecessor = self.find_predecessor([v, j, k], pointers)
         move = pointers.copy()
         if successor[v] != k:
-            move = reverse(move, successor[v], k)
+            move = self.reverse(move, successor[v], k)
         if successor[k] != j:
-            move = reverse(move, successor[k], j)
+            move = self.reverse(move, successor[k], j)
         move[predecessor[v]] = k
         move[successor[v]] = j
         move[successor[k]] = successor[j]
         move[v] = None
-        test = test_valid(move, indicator='+')
+        test = self.test_valid(move, indicator='+')
         if not test:
             return None
         return move
     
     def t2_unstring(self, pointers, j, k, l, v):
-        successor = find_successor([v, j, k, l], pointers)
-        predecessor = find_predecessor([v, j, k, l], pointers)
+        successor = self.find_successor([v, j, k, l], pointers)
+        predecessor = self.find_predecessor([v, j, k, l], pointers)
         move = pointers.copy()
         if successor[v] != predecessor[j]:
-            move = reverse(move, successor[v], predecessor[j])
+            move = self.reverse(move, successor[v], predecessor[j])
         if successor[l] != k:
-            move = reverse(move, successor[l], k)
+            move = self.reverse(move, successor[l], k)
         move[predecessor[v]] = k
         move[successor[l]] = predecessor[j]
         move[successor[v]] = j
         move[l] = successor[k]
         move[v] = None
-        test = test_valid(move, indicator='-')
+        test = self.test_valid(move, indicator='-')
         if not test:
             return None
         return move
