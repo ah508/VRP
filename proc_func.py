@@ -3,12 +3,10 @@ import math
 
 class GenFunc:
     """A set of general functions intended for subclassing.
-
-    WARNING: ENSURE THAT self.dist IS DEFINED IN THE CHILD CLASS
     """
     
-    def __init__(self):
-        self.checkinit()
+    def __init__(self, points):
+        self.dist = points.d_matrix
 
     def checkinit(self):
         if hasattr(self, 'dist'):
