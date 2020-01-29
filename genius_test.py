@@ -7,15 +7,14 @@ from proc_func import GenFunc
 
 class GENIUS(GenFunc):
     def __init__(self, points):
+        super().__init__(points)
         self.points = points
-        self.dist = points.d_matrix
         self.offroute = list(range(0, len(points.names)))
         self.history = []
         self.onroute = []
         self.p_neighborhood = {}
         self.edges = [None] * len(points.names)
         self.route_cost = 0
-        super().__init__()
         self.initialize()
 
     def swap(self, vertex):
