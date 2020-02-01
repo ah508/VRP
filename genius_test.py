@@ -166,6 +166,8 @@ class GENIUS(GenFunc):
                 for k in vk:
                     if k == vi:
                         continue
+                    if vip == k:
+                        continue
                     if k in i1_to_j:
                         move = self.t1_unstring(d_set, j, k, vi)
                         if move:
@@ -185,6 +187,9 @@ class GENIUS(GenFunc):
                                 if move:
                                     possible_moves[move_key] = self.insert_vertex(vi, move, direction=True)
                                     move_key += 1
+                            # if possible_moves == {}:
+                            #     print([vi, j, k, l])
+                            #     print(edgeset)
         min_pair = ['x', math.inf]
         for key in possible_moves.keys():
             if possible_moves[key] != None:

@@ -5,6 +5,7 @@ import numpy as np
 class PointGrab:
     def __init__(self):
         points_to_use = input('Enter a testing set identifier: ')
+        self.ptu = points_to_use
         path = os.getcwd() + "\\point_sets\\" + points_to_use
         found = False
         try:

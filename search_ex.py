@@ -1,31 +1,35 @@
+import os
+import json
+from search_test import SEARCH
+from useful_funcs import PointGrab
+import numpy as np
+import math
 import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib import animation
-import numpy as np
 import time
-from genius_test import GENIUS
-from useful_funcs import PointGrab
-from proc_func import separate
-import json
-import os
 
 point_set = PointGrab()
-savehist = input('save history? [y/n]')
-class npencode(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, np.int64):
-            return int(o)
-        return json.JSONEncoder.default(self, o)
+hispath = os.getcwd() + "\\histories\\" + point_set.ptu + ".json"
+stapath = os.getcwd() + "\\starting_paths\\" + point_set.ptu + ".json"
+dirpath = os.getcwd() + "\\path_dir\\" + point_set.ptu + ".json"
+with open(hispath, 'r') as f:
+    old_history = json.load(f)
+print(type(old_history))
+with open(stapath, 'r') as f:
+    start_path = json.load(f)
+print(type(start_path))
+with open(dirpath, 'r') as f:
+    path_dir = json.load(f)
+print(type(path_dir))
 
-n_time = time.process_time()
-
-momentotruth = GENIUS(point_set)
-momentotruth.cycle()
-momentotruth.post_opt()
-held_history = momentotruth.history
-e_time = time.process_time() - n_time
-print(e_time)
-
+q = 25
+searchproc = SEARCH(point_set, old_history, start_path, path_dir, 1000, 50, q, 100)
+searchproc.search()
+try:
+    searchproc.history.append(searchproc.s_star)
+except AttributeError:
+    searchproc.history.append(searchproc.sn_star)
 
 def parse_history(history):
     parsed_hist = []
@@ -59,25 +63,7 @@ def parse_history(history):
         parsed_hist.append(xy)
     return parsed_hist
 
-
-pathlist, pathdirectory = separate(held_history[-1][0].copy(), point_set.d_matrix, 20, 5)
-held_history.append(pathlist)
-
-if savehist.lower() in ['y', 'yes', 'ye', 'yeah']:
-    hispath = os.getcwd() + "\\histories\\" + point_set.ptu + ".json"
-    with open(hispath, 'w+', encoding='utf8') as f:
-        json.dump(held_history, f, cls=npencode)
-
-    patpath = os.getcwd() + "\\starting_paths\\" + point_set.ptu + ".json"
-    with open(patpath, 'w+', encoding='utf8') as f:
-        json.dump(pathlist, f, cls=npencode)
-    
-    dirpath = os.getcwd() + "\\path_dir\\" + point_set.ptu + ".json"
-    with open(dirpath, 'w+', encoding='utf8') as f:
-        json.dump(pathdirectory, f, cls=npencode)
-
-history = parse_history(held_history)
-
+history = parse_history(searchproc.history)
 
 fig, ax = plt.subplots()
 ax.set(xlim=(-5.1, 5.1), ylim=(-5.1, 5.1))
@@ -90,5 +76,5 @@ def animate(frame):
     shape.set_xy(history[frame])
     return shape,
 
-animation = animation.FuncAnimation(fig, animate, frames=len(held_history), interval=200, repeat_delay=10000)
+animation = animation.FuncAnimation(fig, animate, frames=len(searchproc.history), interval=200, repeat_delay=10000)
 plt.show()

@@ -7,6 +7,7 @@ class GenFunc:
     
     def __init__(self, points):
         self.dist = points.d_matrix
+        self.node_cost = points.costs
 
     def checkinit(self):
         if hasattr(self, 'dist'):
@@ -64,28 +65,22 @@ class GenFunc:
             return []
         return [v1] + self.points_between(edges, self.find_successor(v1, edges), v2)
 
-    def test_valid(self, edgeset, indicator='+'):
+    def test_valid(self, edgeset, pre_change=[], indicator='+'):
         tester = set()
         for i in edgeset:
             if i in tester and i != None:
-                print('invalid construction!')
-                print(f'flag: {indicator}')
+                print(pre_change)
                 print(edgeset)
-                input(':')
-                return False
+                raise NotImplementedError(f'invalid construction with flag: {indicator}')
             if i == edgeset.index(i):
-                print('formed a loop!')
-                print(f'flag: {indicator}')
+                print(pre_change)
                 print(edgeset)
-                input(':')
-                return False
+                raise NotImplementedError(f'formed a loop with flag: {indicator}')
             try:
                 if edgeset[i] == None:
-                    print('invalid pointer')
-                    print(f'flag: {indicator}')
+                    print(pre_change)
                     print(edgeset)
-                    input(':')
-                    return False
+                    raise NotImplementedError(f'invalid pointer with flag: {indicator}')
             except TypeError:
                 pass
             tester.add(i)
@@ -105,6 +100,13 @@ class GenFunc:
             if pointer != None:
                 cost += self.dist[vertex, pointer]
         return cost
+    
+    def point_cost(self, circuit):
+        cost = 0
+        for vertex in circuit:
+            if vertex != None:
+                cost += self.node_cost[vertex]
+        return cost
 
     def t1_string(self, pointers, i, j, k, v):
         move = {}
@@ -118,7 +120,7 @@ class GenFunc:
         move['frame'][v] = j
         move['frame'][successor[i]] = k
         move['frame'][successor[j]] = successor[k]
-        test = self.test_valid(move['frame'])
+        test = self.test_valid(move['frame'], pre_change=pointers)
         if not test:
             return None
         move['cost'] = self.circuit_cost(move['frame'])
@@ -138,67 +140,11 @@ class GenFunc:
         move['frame'][l] = successor[j]
         move['frame'][predecessor[k]] = predecessor[l]
         move['frame'][successor[i]] = k
-        test = self.test_valid(move['frame'])
+        test = self.test_valid(move['frame'], pre_change=pointers)
         if not test:
             return None
         move['cost'] = self.circuit_cost(move['frame'])
         return move
-
-# def insert_vertex(self, vertex, edgeset, direction=False):
-#     possible_moves = {}
-#     move_key = 0
-#     vi = self.p_neighborhood[vertex]
-#     vj = self.p_neighborhood[vertex]
-#     if direction:
-#         direct = [edgeset]
-#     else:
-#         direct = [edgeset, self.reverse(edgeset, 0, 0)]
-#     for d_set in direct:
-#         for i in vi:
-#             if i == vertex:
-#                 continue
-#             vi1 = self.find_successor(i, d_set)
-#             for j in vj:
-#                 if j == vertex:
-#                     continue
-#                 if i == j:
-#                     continue
-#                 j_to_i = points_between(d_set, j, i)
-#                 i_to_j = points_between(d_set, i, j)
-#                 vj1 = self.find_successor(j, d_set)
-#                 vk = self.p_neighborhood[vi1]
-#                 vl = self.p_neighborhood[vj1]
-#                 for k in vk:
-#                     if k == vertex:
-#                         continue
-#                     if j == k:
-#                         continue
-#                     if k not in j_to_i:
-#                         continue
-#                     possible_moves[move_key] = self.t1_string(d_set, i, j, k, vertex)
-#                     move_key += 1
-#                     for l in vl:
-#                         if l == vertex:
-#                             continue
-#                         if i == l:
-#                             continue
-#                         if l not in i_to_j:
-#                             continue
-#                         if k != vj1 and l != vi1:
-#                             possible_moves[move_key] = self.t2_string(d_set, i, j, k, l, vertex)
-#                             move_key += 1
-#     min_pair = ['x', math.inf]
-#     for key in possible_moves.keys():
-#         if possible_moves[key] != None:
-#             if possible_moves[key]['cost'] <= min_pair[1]:
-#                 min_pair = [key, possible_moves[key]['cost']]
-#     if direction:
-#         return possible_moves[min_pair[0]]
-#     else:
-#         self.swap(vertex)
-#         self.execute_move(possible_moves[min_pair[0]])
-#         possible_moves = {}
-#         return None
 
     def t1_unstring(self, pointers, j, k, v):
         successor = self.find_successor([v, j, k], pointers)
@@ -212,7 +158,7 @@ class GenFunc:
         move[successor[v]] = j
         move[successor[k]] = successor[j]
         move[v] = None
-        test = self.test_valid(move, indicator='+')
+        test = self.test_valid(move, pre_change=pointers, indicator='+')
         if not test:
             return None
         return move
@@ -230,7 +176,7 @@ class GenFunc:
         move[successor[v]] = j
         move[l] = successor[k]
         move[v] = None
-        test = self.test_valid(move, indicator='-')
+        test = self.test_valid(move, pre_change=pointers, indicator='-')
         if not test:
             return None
         return move
