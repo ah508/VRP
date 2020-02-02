@@ -65,21 +65,24 @@ class GenFunc:
             return []
         return [v1] + self.points_between(edges, self.find_successor(v1, edges), v2)
 
-    def test_valid(self, edgeset, pre_change=[], indicator='+'):
+    def test_valid(self, edgeset, pre_change=[], indicator='+', v=None, i=None, j=None, k=None, l=None):
         tester = set()
         for i in edgeset:
             if i in tester and i != None:
                 print(pre_change)
                 print(edgeset)
+                print([v, i, j, k, l])
                 raise NotImplementedError(f'invalid construction with flag: {indicator}')
             if i == edgeset.index(i):
                 print(pre_change)
                 print(edgeset)
+                print([v, i, j, k, l])
                 raise NotImplementedError(f'formed a loop with flag: {indicator}')
             try:
                 if edgeset[i] == None:
                     print(pre_change)
                     print(edgeset)
+                    print([v, i, j, k, l])
                     raise NotImplementedError(f'invalid pointer with flag: {indicator}')
             except TypeError:
                 pass
@@ -109,6 +112,8 @@ class GenFunc:
         return cost
 
     def t1_string(self, pointers, i, j, k, v):
+        if v == i:
+            print('hit')
         move = {}
         successor = self.find_successor([i, j, k], pointers)
         move['frame'] = pointers.copy()
@@ -120,9 +125,14 @@ class GenFunc:
         move['frame'][v] = j
         move['frame'][successor[i]] = k
         move['frame'][successor[j]] = successor[k]
-        test = self.test_valid(move['frame'], pre_change=pointers)
-        if not test:
-            return None
+        try:
+            test = self.test_valid(move['frame'], pre_change=pointers, v=v, i=i, j=j, k=k)
+            if not test:
+                return None          
+        except NotImplementedError:
+            print('CAUGHT')
+            print([v, i, j, k])
+            move['frame'] = pointers
         move['cost'] = self.circuit_cost(move['frame'])
         return move
 
@@ -140,9 +150,14 @@ class GenFunc:
         move['frame'][l] = successor[j]
         move['frame'][predecessor[k]] = predecessor[l]
         move['frame'][successor[i]] = k
-        test = self.test_valid(move['frame'], pre_change=pointers)
-        if not test:
-            return None
+        try:
+            test = self.test_valid(move['frame'], pre_change=pointers, v=v, i=i, j=j, k=k, l=l)
+            if not test:
+                return None
+        except NotImplementedError:
+            print('CAUGHT')
+            print([v, i, j, k])
+            move['frame'] = pointers
         move['cost'] = self.circuit_cost(move['frame'])
         return move
 
@@ -158,7 +173,7 @@ class GenFunc:
         move[successor[v]] = j
         move[successor[k]] = successor[j]
         move[v] = None
-        test = self.test_valid(move, pre_change=pointers, indicator='+')
+        test = self.test_valid(move, pre_change=pointers, indicator='+', v=v, j=j, k=k)
         if not test:
             return None
         return move
@@ -176,7 +191,7 @@ class GenFunc:
         move[successor[v]] = j
         move[l] = successor[k]
         move[v] = None
-        test = self.test_valid(move, pre_change=pointers, indicator='-')
+        test = self.test_valid(move, pre_change=pointers, indicator='-', v=v, j=j, k=k, l=l)
         if not test:
             return None
         return move

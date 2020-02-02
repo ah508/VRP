@@ -8,6 +8,7 @@ import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib import animation
 import time
+from tabu import TABU
 
 point_set = PointGrab()
 hispath = os.getcwd() + "\\histories\\" + point_set.ptu + ".json"
@@ -24,8 +25,8 @@ with open(dirpath, 'r') as f:
 print(type(path_dir))
 
 q = 25
-searchproc = SEARCH(point_set, old_history, start_path, path_dir, 1000, 50, q, 100)
-searchproc.search()
+searchproc = TABU(point_set, old_history, start_path, path_dir, 1000, 25, q, 40)
+searchproc.tabu_search()
 try:
     searchproc.history.append(searchproc.s_star)
 except AttributeError:
@@ -76,5 +77,5 @@ def animate(frame):
     shape.set_xy(history[frame])
     return shape,
 
-animation = animation.FuncAnimation(fig, animate, frames=len(searchproc.history), interval=200, repeat_delay=10000)
+animation = animation.FuncAnimation(fig, animate, frames=len(searchproc.history), interval=100, repeat_delay=10000)
 plt.show()

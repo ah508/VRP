@@ -61,11 +61,21 @@ class SEARCH(GenFunc):
             for vertex in selected_verts:
                 self.set_p1(vertex)
                 transfers = self.neighbor_routes(vertex, empties)
+                # for ri in transfers:
+                #     if vertex in self.route_list[ri]:
+                #         print('EARLY HIT')
+                #         input(':')
+                # transfers = transfers - set([self.route_ref[vertex]])
                 # print(f'transfers: {transfers}')
                 # print(f'v: {vertex}, r: {self.route_ref[vertex]}, c; delroute')
                 del_route = self.extract(vertex, self.route_ref[vertex])
                 for route_index in transfers:
-                    # print(f'v: {vertex}, r: {route_index}, c; routeadjust')
+                    # if vertex in self.route_list[route_index]:
+                    #     print('invalid swap')
+                    #     print(vertex)
+                    #     print(self.route_list[route_index])
+                    #     input(':')
+                        # continue
                     route_adjust = self.insert(vertex, route_index)
                     move = self.route_list.copy()
                     move[self.route_ref[vertex]] = del_route
@@ -153,7 +163,7 @@ class SEARCH(GenFunc):
             f2_bump = True
             # print(f'Infeasible improvement to: {self.f2_star}')
         self.delta_max = max(self.delta_max, abs(move['f2'] - prev_f2))
-        self.stream_body(f1_bump, f2_bump, move['f1'], move['f2'])
+        self.stream_body(f1_bump, f2_bump, move['f1'], move['f2'], move['valid'])
         try:
             self.select_tot[move['vertex']] += 1
             self.update_freq()
@@ -167,19 +177,18 @@ class SEARCH(GenFunc):
         self.history.append(move['frame'])
 
     def check_ten(self, route):
+        self.sol_cost(route, fetch=True)
         if self.cur_iter % self.h == 0:
             if self.dist_ten == set([True]):
                 self.beta /= 2
             elif self.dist_ten == set([False]):
                 self.beta *= 2
+            self.dist_ten.clear()
             if self.cap_ten == set([True]):
                 self.alpha /= 2
             elif self.cap_ten == set([False]):
                 self.alpha *= 2
-            self.dist_ten = set()
-            self.cap_ten = set()
-        else:
-            self.sol_cost(route, fetch=True)
+            self.cap_ten.clear()
         
     def check_sol(self, solution):
         v_cost, iv_cost, valid = self.sol_cost(solution)
@@ -192,20 +201,21 @@ class SEARCH(GenFunc):
             self.f2_star = iv_cost
 
     def neighbor_routes(self, vertex, empties):
-        distances = self.dist[vertex].copy()
-        distances[vertex] = math.inf
+        distances = self.dist[vertex]#.copy()
+        # distances[vertex] = math.inf
         nearest = heapq.nsmallest(self.p1, distances)
         neighbors = []
         for i in nearest:
-            if i != math.inf:
+            if i != 0:
                 neighbors.append(np.where(distances==i)[0][0])
-        banned = [self.route_ref[vertex]] + [0] + [None]
-        neighborhood = empties.copy()
+        banned = self.route_list[self.route_ref[vertex]]
+        neighborhood = set(empties.copy())
         for friend in neighbors:
-            if self.route_ref[friend] not in banned:
-                neighborhood.append(self.route_ref[friend])
-                banned.append(self.route_ref[friend])
-        return neighborhood
+            if friend not in banned:
+                neighborhood.add(self.route_ref[friend])
+                # neighborhood.append(self.route_ref[friend])
+                # banned.append(self.route_ref[friend])
+        return neighborhood - set([self.route_ref[vertex]])
 
     def update_neighbors(self):
         for vertex in range(0, self.tot_verts):
@@ -241,16 +251,20 @@ class SEARCH(GenFunc):
     def sol_cost(self, routes, fetch=False):
         if fetch:
             v_cost, cost_vector, cap_vector = self.valid_cost(routes)
+            d_check = set()
+            c_check = set()
             for route_cost in cost_vector:
                 if max(0, route_cost-self.time_const) > 0:
-                    self.dist_ten.add(False)
+                    d_check.add(False)
                 else:
-                    self.dist_ten.add(True)
+                    d_check.add(True)
             for cap_cost in cap_vector:
                 if max(0, cap_cost-self.cap_const) > 0:
-                    self.cap_ten.add(False)
+                    c_check.add(False)
                 else:
-                    self.cap_ten.add(True)
+                    c_check.add(True)
+            self.cap_ten.add(min(c_check))
+            self.dist_ten.add(min(d_check))
             return None
         v_cost, cost_vector, cap_vector = self.valid_cost(routes)
         valid = False
@@ -311,10 +325,9 @@ class SEARCH(GenFunc):
                         continue
                     if k in i1_to_j:
                         move = self.t1_unstring(d_set, j, k, vi)
-                        if move:
-                            possible_moves[move_key] = {'frame' : move,
-                                                        'cost' : self.circuit_cost(move)}
-                            move_key += 1
+                        possible_moves[move_key] = {'frame' : move,
+                                                    'cost' : self.circuit_cost(move)}
+                        move_key += 1
                     if k in j1_to_i:
                         vk1 = self.find_successor(k, d_set)
                         vl = self.p_neighborhoods[vk1]
@@ -327,10 +340,9 @@ class SEARCH(GenFunc):
                             if k != vj1 and l != vi1:
                                 # print([j, k, l, vi])
                                 move = self.t2_unstring(d_set, j, k, l, vi)
-                                if move:
-                                    possible_moves[move_key] = {'frame' : move,
-                                                                'cost' : self.circuit_cost(move)}
-                                    move_key += 1
+                                possible_moves[move_key] = {'frame' : move,
+                                                            'cost' : self.circuit_cost(move)}
+                                move_key += 1
                             # if possible_moves == {}:
                             #     print([vi, j, k, l])
                             #     print(edgeset)
@@ -342,6 +354,9 @@ class SEARCH(GenFunc):
 
     def insert(self, vertex, route_index):
         route = self.route_list[route_index]
+        if vertex in self.route_list[route_index]:
+            print('LATE HIT')
+            input(':')
         if set(route) == set([None]):
             newlist = [None] * self.tot_verts
             newlist[vertex] = 0
@@ -367,6 +382,7 @@ class SEARCH(GenFunc):
         for d_set in direct:
             for i in vi:
                 if i == vertex:
+                    print('hit')
                     continue
                 vi1 = self.find_successor(i, d_set)
                 for j in vj:
@@ -391,7 +407,7 @@ class SEARCH(GenFunc):
                         for l in vl:
                             if l == vertex:
                                 continue
-                            if i == l:
+                            if l == i:
                                 continue
                             if l not in i_to_j:
                                 continue
@@ -425,7 +441,7 @@ class SEARCH(GenFunc):
                     zed_star = zed
                     # print(f'Improvement to: {zed}')
                     t = 1
-                    self.history.append(working_routes)
+                    # self.history.append(working_routes)
                 elif zed >= zed_star:
                     t += 1
         return working_routes
@@ -451,9 +467,8 @@ class SEARCH(GenFunc):
                         continue
                     if k in i1_to_j:
                         move = self.t1_unstring(d_set, j, k, vi)
-                        if move:
-                            possible_moves[move_key] = self.insert_vertex(vi, move, edgeset_index, direction=True)
-                            move_key += 1
+                        possible_moves[move_key] = self.insert_vertex(vi, move, edgeset_index, direction=True)
+                        move_key += 1
                     if k in j1_to_i:
                         vk1 = self.find_successor(k, d_set)
                         vl = self.p_neighborhoods[vk1][edgeset_index]
@@ -465,24 +480,19 @@ class SEARCH(GenFunc):
                                 continue
                             if k != vj1 and l != vi1:
                                 move = self.t2_unstring(d_set, j, k, l, vi)
-                                if move:
-                                    possible_moves[move_key] = self.insert_vertex(vi, move, edgeset_index, direction=True)
-                                    move_key += 1
-        min_pair = ['x', math.inf]
-        for key in possible_moves.keys():
-            if possible_moves[key] != None:
-                if possible_moves[key]['cost'] <= min_pair[1]:
-                    min_pair = [key, possible_moves[key]['cost']]
+                                possible_moves[move_key] = self.insert_vertex(vi, move, edgeset_index, direction=True)
+                                move_key += 1
+        min_pair = self.best_candidate(possible_moves)
         try:
             return possible_moves[min_pair[0]]['frame'], min_pair[1]
         except KeyError:
             return edgeset, self.circuit_cost(edgeset)
 
     def stream_header(self):
-        print('| F1+ | F2+ | iter |  time  |   F1*   |   F2*   |   F1   |   F2   | m |    α    |    ß    | ΔMAX | S |')
-        print('|----------------------------------------------------------------------------------------------------|')
+        print('|F1+|F2+| iter | end |  time  |   F1*   |   F2*   |val|   F1   |   F2   | m |    α    |    ß    | ΔMAX | S |')
+        print('|----------------------------------------------------------------------------------------------------------|')
 
-    def stream_body(self, f1up, f2up, f1, f2):
+    def stream_body(self, f1up, f2up, f1, f2, valid):
         if f1up:
             f1plus = '*'
         else:
@@ -495,6 +505,10 @@ class SEARCH(GenFunc):
             u = ' '
         else:
             u = '*'
+        if valid:
+            val = '*'
+        else:
+            val = ' '
         tim = time.process_time() - self.time
-        out = '|{:^5}|{:^5}|{:>6}|{:>8.1f}|{:>9g}|{:>9g}|{:>8g}|{:>8g}|{:^3}|{:^9.3f}|{:^9.3f}|{:>6.2}|{:^3}|'.format(f1plus, f2plus, self.cur_iter, tim, self.f1_star, self.f2_star, f1, f2, self.m, self.alpha, self.beta, self.delta_max, u)
+        out = '|{:^3}|{:^3}|{:>6}|{:>5}|{:>8.1f}|{:>9g}|{:>9g}|{:^3}|{:>8g}|{:>8g}|{:^3}|{:^9.3f}|{:^9.3f}|{:>6.2f}|{:^3}|'.format(f1plus, f2plus, self.cur_iter, self.max_iter, tim, self.f1_star, self.f2_star, val, f1, f2, self.m, self.alpha, self.beta, self.delta_max, u)
         print(out)
