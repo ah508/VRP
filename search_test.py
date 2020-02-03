@@ -3,11 +3,7 @@ import random as r
 import numpy as np
 import math
 import heapq
-import pprint
 import time
-prrint = pprint.PrettyPrinter()
-
-
 
 class SEARCH(GenFunc):
     def __init__(self, points, history, routes, route_identifiers, max_cap, max_len, q, n_max):
@@ -61,14 +57,29 @@ class SEARCH(GenFunc):
             for vertex in selected_verts:
                 self.set_p1(vertex)
                 transfers = self.neighbor_routes(vertex, empties)
-                # for ri in transfers:
-                #     if vertex in self.route_list[ri]:
-                #         print('EARLY HIT')
-                #         input(':')
-                # transfers = transfers - set([self.route_ref[vertex]])
+                for ri in transfers:
+                    if vertex in self.route_list[ri]:
+                        print('MID HIT')
+                        print(vertex)
+                        print(transfers)
+                        print(self.route_ref)
+                        print(ri)
+                        for i in self.route_list:
+                            print(i)
+                        input(':')
+                transfers = transfers - set([self.route_ref[vertex]])
                 # print(f'transfers: {transfers}')
                 # print(f'v: {vertex}, r: {self.route_ref[vertex]}, c; delroute')
                 del_route = self.extract(vertex, self.route_ref[vertex])
+                if vertex in del_route:
+                    print('EARLY HIT')
+                    print(vertex)
+                    print(transfers)
+                    print(self.route_ref)
+                    print(ri)
+                    for i in self.route_list:
+                        print(i)
+                    input(':')
                 for route_index in transfers:
                     # if vertex in self.route_list[route_index]:
                     #     print('invalid swap')
@@ -109,7 +120,6 @@ class SEARCH(GenFunc):
             min_pair = self.best_candidate(candidate_set)
             next_move = candidate_set[min_pair[0]]
             if self.us_clear:
-                # print('US go 1')
                 if next_move['f2'] > cost_cur_route[1]:
                     # print('US go 2')
                     if cost_cur_route[2]:
@@ -130,9 +140,6 @@ class SEARCH(GenFunc):
                         self.us_clear = False
             else:
                 self.us_clear = True
-            if self.us_clear:
-                self.tabu[(next_move['vertex'], next_move['route from'])] = self.cur_iter + r.randint(self.theta_l, self.theta_u)
-                self.route_ref[next_move['vertex']] = next_move['route to']
             self.execute_move(next_move, cost_cur_route[1])
 
     def update_freq(self):
@@ -170,6 +177,11 @@ class SEARCH(GenFunc):
         except TypeError:
             pass
         self.route_list = move['frame']
+        if self.us_clear:
+            if move['vertex'] == None:
+                input('oops')
+            self.route_ref[move['vertex']] = move['route to']
+            self.tabu[(move['vertex'], move['route from'])] = self.cur_iter + r.randint(self.theta_l, self.theta_u)
         self.check_ten(move['frame'])
         if f1_bump or f2_bump:
             self.max_iter = self.cur_iter + self.n_max
@@ -215,7 +227,7 @@ class SEARCH(GenFunc):
                 neighborhood.add(self.route_ref[friend])
                 # neighborhood.append(self.route_ref[friend])
                 # banned.append(self.route_ref[friend])
-        return neighborhood - set([self.route_ref[vertex]])
+        return neighborhood
 
     def update_neighbors(self):
         for vertex in range(0, self.tot_verts):
@@ -300,6 +312,16 @@ class SEARCH(GenFunc):
         else:
             newlist = self.nt_extract(vertex, route, route_index)['frame']
         # print(newlist)
+        if vertex in newlist:
+            print('check?')
+            print(vertex)
+            # print(transfers)
+            print(self.route_ref)
+            print(route_index)
+            print(newlist)
+            for i in self.route_list:
+                print(i)
+            input(':')
         return newlist
 
     def nt_extract(self, vi, edgeset, edgeset_index):
@@ -317,7 +339,7 @@ class SEARCH(GenFunc):
                 vj1 = self.find_successor(j, d_set)
                 i1_to_j = self.points_between(d_set, vi1, j)
                 j1_to_i = self.points_between(d_set, vj1, vi)
-                vk = self.p_neighborhoods[vip]
+                vk = self.p_neighborhoods[vip][edgeset_index]
                 for k in vk:
                     if k == vi:
                         continue
@@ -330,7 +352,7 @@ class SEARCH(GenFunc):
                         move_key += 1
                     if k in j1_to_i:
                         vk1 = self.find_successor(k, d_set)
-                        vl = self.p_neighborhoods[vk1]
+                        vl = self.p_neighborhoods[vk1][edgeset_index]
                         j_to_k = self.points_between(d_set, j, k)
                         for l in vl:
                             if vi == l:
@@ -489,8 +511,8 @@ class SEARCH(GenFunc):
             return edgeset, self.circuit_cost(edgeset)
 
     def stream_header(self):
-        print('|F1+|F2+| iter | end |  time  |   F1*   |   F2*   |val|   F1   |   F2   | m |    α    |    ß    | ΔMAX | S |')
-        print('|----------------------------------------------------------------------------------------------------------|')
+        print('|F1+|F2+| iter | end |  time  |   E/s   |   F1*   |   F2*   |val|   F1   |   F2   | m |    α    |    ß    | ΔMAX | S |')
+        print('|--------------------------------------------------------------------------------------------------------------------|')
 
     def stream_body(self, f1up, f2up, f1, f2, valid):
         if f1up:
@@ -510,5 +532,6 @@ class SEARCH(GenFunc):
         else:
             val = ' '
         tim = time.process_time() - self.time
-        out = '|{:^3}|{:^3}|{:>6}|{:>5}|{:>8.1f}|{:>9g}|{:>9g}|{:^3}|{:>8g}|{:>8g}|{:^3}|{:^9.3f}|{:^9.3f}|{:>6.2f}|{:^3}|'.format(f1plus, f2plus, self.cur_iter, self.max_iter, tim, self.f1_star, self.f2_star, val, f1, f2, self.m, self.alpha, self.beta, self.delta_max, u)
+        eps = self.cur_iter/tim
+        out = '|{:^3}|{:^3}|{:>6}|{:>5}|{:>8.1f}|{:>9.2f}|{:>9g}|{:>9g}|{:^3}|{:>8g}|{:>8g}|{:^3}|{:^9.3f}|{:^9.3f}|{:>6.2f}|{:^3}|'.format(f1plus, f2plus, self.cur_iter, self.max_iter, tim, eps, self.f1_star, self.f2_star, val, f1, f2, self.m, self.alpha, self.beta, self.delta_max, u)
         print(out)

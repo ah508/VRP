@@ -77,5 +77,5 @@ def animate(frame):
     shape.set_xy(history[frame])
     return shape,
 
-animation = animation.FuncAnimation(fig, animate, frames=len(searchproc.history), interval=100, repeat_delay=10000)
+animation = animation.FuncAnimation(fig, animate, frames=len(searchproc.history), interval=50, repeat_delay=10000)
 plt.show()
