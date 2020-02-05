@@ -34,7 +34,7 @@ class Tracker:
                     self.d_matrix[i][j] = dist
         self.d_matrix = self.d_matrix.tolist()
 point_set = Tracker()
-for i in range(1, 100):
+for i in range(1, 30):
     identifier = str(i)
     nogo = True
     while nogo:
@@ -42,7 +42,8 @@ for i in range(1, 100):
         yloc = random.uniform(-5, 5)
         if xloc not in point_set.xpoints and yloc not in point_set.ypoints:
             nogo = False
-    cost = random.uniform(0, 1)
+    # cost = random.uniform(0, 1)
+    cost = 0
     point_set.point_update(xloc, yloc, identifier, cost=cost)
 point_set.dist_get()
 
