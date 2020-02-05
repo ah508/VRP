@@ -1,3 +1,4 @@
+#cython: language_level=3
 from proc_func import GenFunc
 import random as r
 import numpy as np
@@ -45,12 +46,10 @@ class SEARCH(GenFunc):
     def search(self):
         self.stream_header()
         while self.cur_iter < self.max_iter:
-            # print(self.cur_iter)
             self.m = len(set(self.route_ref)-set([None]))
             self.update_neighbors()
             selected_verts = r.sample(self.W, self.q)
             cost_cur_route = self.sol_cost(self.route_list)
-            # print(f'{cost_cur_route[0]}, {cost_cur_route[1]}, {cost_cur_route[2]}')
             candidate_set = {}
             cand_tag = 0
             empties = self.get_empty(self.route_list)
@@ -68,8 +67,6 @@ class SEARCH(GenFunc):
                             print(i)
                         input(':')
                 transfers = transfers - set([self.route_ref[vertex]])
-                # print(f'transfers: {transfers}')
-                # print(f'v: {vertex}, r: {self.route_ref[vertex]}, c; delroute')
                 del_route = self.extract(vertex, self.route_ref[vertex])
                 if vertex in del_route:
                     print('EARLY HIT')
@@ -81,12 +78,6 @@ class SEARCH(GenFunc):
                         print(i)
                     input(':')
                 for route_index in transfers:
-                    # if vertex in self.route_list[route_index]:
-                    #     print('invalid swap')
-                    #     print(vertex)
-                    #     print(self.route_list[route_index])
-                    #     input(':')
-                        # continue
                     route_adjust = self.insert(vertex, route_index)
                     move = self.route_list.copy()
                     move[self.route_ref[vertex]] = del_route
@@ -121,12 +112,9 @@ class SEARCH(GenFunc):
             next_move = candidate_set[min_pair[0]]
             if self.us_clear:
                 if next_move['f2'] > cost_cur_route[1]:
-                    # print('US go 2')
                     if cost_cur_route[2]:
-                        # print('US CLEAR')
                         post_opt_route = self.post_opt(self.route_list)
                         cost = self.sol_cost(post_opt_route)
-                        # print(cost[2])
                         next_move = {
                             'frame' : post_opt_route,
                             'cost' : None,
@@ -153,7 +141,6 @@ class SEARCH(GenFunc):
         for index, contents in enumerate(routes):
             if set(contents) == set([None]):
                 potentials.append(index)
-        # print(potentials)
         return potentials
 
     def execute_move(self, move, prev_f2):
@@ -163,12 +150,10 @@ class SEARCH(GenFunc):
             self.s_star = move['frame']
             self.f1_star = move['f1']
             f1_bump = True
-            # print(f'Feasible improvement to: {self.f1_star}')
         if move['f2'] < self.f2_star:
             self.sn_star = move['frame']
             self.f2_star = move['f2']
             f2_bump = True
-            # print(f'Infeasible improvement to: {self.f2_star}')
         self.delta_max = max(self.delta_max, abs(move['f2'] - prev_f2))
         self.stream_body(f1_bump, f2_bump, move['f1'], move['f2'], move['valid'])
         try:
@@ -296,7 +281,6 @@ class SEARCH(GenFunc):
     def extract(self, vertex, route_index):
         route = self.route_list[route_index]
         n_vert = len(set(route)-set([None]))
-        # print(route)
         if n_vert == 0:
             raise NotImplementedError('dude that was an invalid selection')
         elif n_vert == 1:

@@ -1,3 +1,4 @@
+#cython: language_level=3
 import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib import animation

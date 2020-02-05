@@ -24,8 +24,8 @@ with open(dirpath, 'r') as f:
     path_dir = json.load(f)
 print(type(path_dir))
 
-q = 25
-searchproc = TABU(point_set, old_history, start_path, path_dir, 1000, 25, q, 40)
+q = 20
+searchproc = TABU(point_set, old_history, start_path, path_dir, 1000, 15, q, 40)
 searchproc.tabu_search()
 try:
     searchproc.history.append(searchproc.s_star)
