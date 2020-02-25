@@ -2,3 +2,8 @@ __pycache__
 test.py
 setup.py
 build/*
+safekeeping.*
+mapinterface.py
+weatherinterface.py
+.vscode/*
+clients/*
