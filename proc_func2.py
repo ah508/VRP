@@ -8,7 +8,7 @@ class GenFunc:
     
     def __init__(self, points):
         self.dist = points.d_matrix
-        self.node_cost = points.costs
+        self.costs = points.c_matrix
 
     def checkinit(self):
         if hasattr(self, 'dist'):
@@ -109,7 +109,7 @@ class GenFunc:
         cost = 0
         for vertex in circuit:
             if vertex != None:
-                cost += self.node_cost[vertex]
+                cost += self.costs[circuit.index(vertex)][vertex]
         return cost
 
     def t1_string(self, pointers, i, j, k, v):

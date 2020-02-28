@@ -152,9 +152,63 @@ def get_working_map(client):
         copper.append(dur_split[i])
     shrunk_dist = np.hstack(tuple(keeper))
     shrunk_dur = np.hstack(tuple(copper))
-    return shrunk_dist, shrunk_dur, backmap
+    return shrunk_dist, shrunk_dur, backmap, addresses
 
-    
+def set_info(client):
+    part_path = os.getcwd() + '\\clients\\' + client + '\\customer_info'
+    greased = False
+    filelist = os.listdir(part_path)
+    print('input "list" at any time to see the customer list')
+    while not greased:
+        cust_to_edit = input('which customer would you like to edit?: ')
+        if cust_to_edit == 'list':
+            for f in filelist:
+                print(f)
+            print(' ')
+        elif cust_to_edit == 'all':
+            print('ITERATING OVER ALL CUSTOMERS')
+            print('----------------------------')
+            for f in filelist:
+                n_path = part_path + '\\' + f
+                edit_info(n_path, f)
+            print(' ')
+        elif cust_to_edit in filelist:
+            n_path = part_path + '\\' + cust_to_edit
+            edit_info(n_path, cust_to_edit)
+        else:
+            print('that customer is not in the database')
+        cont = input('continue to edit?[y/n]: ')
+        if cont.lower() not in ['y', 'yes', 'yeah', 'ye']:
+            greased = True
+
+def edit_info(path, name):
+    with open(path, 'r') as cust:
+        preview = json.load(cust)
+    print(f'-- {name} --')
+    for key, value in preview.items():
+        print('{:<10} : {:<}'.format(key, value))
+    print(' ')
+    edit = input('edit these values?[y/n]: ')
+    if edit.lower() in ['y', 'yes', 'ye', 'yeah']:
+        go = True
+        while go:
+            val2edit = input('input the key you wish to edit: ')
+            if val2edit in preview.keys():
+                changeto = input('input the desired value: ')
+                try:
+                    preview[val2edit] = float(changeto)
+                except ValueError:
+                    preview[val2edit] = changeto
+            else:
+                print('that is not a valid key')
+            cont = input('edit another value?[y/n]: ')
+            if cont.lower() not in ['y', 'yes', 'ye', 'yeah']:
+                go = False
+    preview['preset'] = True
+    with open(path, 'w') as cust:
+        json.dump(preview, cust)
+    print(' ')
+    print(' ')
     
 
 

@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 from matplotlib import animation
 import numpy as np
 import time
-from genius_test import GENIUS
+from genius import GENIUS
 from useful_funcs import PointGrab
 from search_test import SEARCH
 import heapq
@@ -65,6 +65,7 @@ class TABU(SEARCH):
             self.route_list = self.s_star
         except AttributeError:
             self.route_list = self.sn_star
+        self.history.append(self.route_list)
         route_costs = []
         for route in self.route_list:
             route_costs.append(self.circuit_cost(route))

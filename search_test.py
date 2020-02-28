@@ -1,5 +1,5 @@
 #cython: language_level=3
-from proc_func import GenFunc
+from proc_func2 import GenFunc
 import random as r
 import numpy as np
 import math
@@ -11,7 +11,7 @@ class SEARCH(GenFunc):
         super().__init__(points)
         self.time = time.process_time()
         self.history = history
-        self.tot_verts = len(points.names)
+        self.tot_verts = len(self.costs)
         self.route_list = routes
         self.route_ref = route_identifiers
         self.m = len(set(self.route_ref)-set([None]))

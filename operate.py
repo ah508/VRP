@@ -23,6 +23,7 @@ while not escape:
         print('[newset]  - instantiate a new customer database')
         print('[addset]  - add a customer to the existing database')
         print('[depot]   - fix the depot')
+        print('[setinfo] - set necessary information for the customer list')
         print('[weather] - forcibly update stored weather information')
         print('[work]    - revise the working customer list')
         print('[solve]   - search for a solution')
@@ -38,11 +39,13 @@ while not escape:
         cname = input('input client name: ')
         try:
             os.mkdir(os.getcwd() + '\\clients\\' + cname)
+            os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\customer_info')
+            os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\weather_info')
+            os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\route_info')
         except FileExistsError:
             print('client already exists')
             continue
-        ##############ADD GENERAL NECESSARY FILE STUFF#################
-
+        
     elif choice == 'cclient':
         cur_client = input('input client to switch to: ')
         print(' ')
@@ -85,6 +88,9 @@ while not escape:
 
     elif choice == 'depot':
         set_depot(cur_client)
+
+    elif choice == 'setinfo':
+        pass
 
     elif choice == 'weather':
         pass

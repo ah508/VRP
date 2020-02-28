@@ -9,11 +9,11 @@ class GENIUS(GenFunc):
     def __init__(self, points):
         super().__init__(points)
         self.points = points
-        self.offroute = list(range(0, len(points.costs)))
+        self.offroute = list(range(0, len(self.costs)))
         self.history = []
         self.onroute = []
         self.p_neighborhood = {}
-        self.edges = [None] * len(points.costs)
+        self.edges = [None] * len(self.costs)
         self.route_cost = 0
         self.initialize()
 

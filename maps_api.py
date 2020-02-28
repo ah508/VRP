@@ -54,6 +54,16 @@ def instantiate_data(cur_client, customer_list):
     contents = [convert_time, convert_dist, addr]
     for i in range(0, 3):
         jdump(path+pathapp[i], contents[i])
+    base_dict = {
+        'parameters' : [],
+        'lat' : 0,
+        'lon' : 0,
+        'proj_time' : 0,
+        'preset' : False
+    }
+    for loc in nadresses:
+        jdump(path+'\\customer_info\\'+loc+'.json', base_dict)
+
 
 def fetch_new(cur_client, customer):
     path = os.getcwd() + '\\clients\\' + cur_client
