@@ -186,7 +186,11 @@ def edit_info(path, name):
         preview = json.load(cust)
     print(f'-- {name} --')
     for key, value in preview.items():
-        print('{:<10} : {:<}'.format(key, value))
+        if isinstance(value, list):
+            tempval = str(value)
+        else:
+            tempval = value
+        print('{:<10} : {:<30}'.format(key, tempval))
     print(' ')
     edit = input('edit these values?[y/n]: ')
     if edit.lower() in ['y', 'yes', 'ye', 'yeah']:

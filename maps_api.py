@@ -15,9 +15,6 @@ def fetch_instantiate(cur_client, customer_list):
     origins = customer_list
     destinations = customer_list
     dmat = gmap.distance_matrix(origins, destinations, units='metric')
-    ###################
-    print(type(dmat))
-#########################
     with open(path + '\\infodump.json', 'w') as f:
         json.dump(dmat, f)
 
@@ -108,6 +105,15 @@ def new_data(cur_client, customer):
             'duds' : omitted,
             'working' : addresses
         }
+        loc = vertical['destination_addresses'][0]
+        base_dict = {
+            'parameters' : [],
+            'lat' : 0,
+            'lon' : 0,
+            'proj_time' : 0,
+            'preset' : False
+        }
+        jdump(path+'\\customer_info\\'+loc+'.json', base_dict)
         pathapp = ['\\time.json', '\\distance.json', '\\customers.json']
         contents = [duration, distance, addr]
         for i in range(0, 3):
