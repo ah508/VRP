@@ -8,12 +8,11 @@ from proc_func2 import GenFunc
 class GENIUS(GenFunc):
     def __init__(self, points):
         super().__init__(points)
-        self.points = points
-        self.offroute = list(range(0, len(self.costs)))
+        self.offroute = list(range(0, len(points.costvec)))
         self.history = []
         self.onroute = []
         self.p_neighborhood = {}
-        self.edges = [None] * len(self.costs)
+        self.edges = [None] * len(points.costvec)
         self.route_cost = 0
         self.initialize()
 
