@@ -123,7 +123,7 @@ def new_data(cur_client, customer):
 
 def parse_array(client, arraytype):
     val = parse_list(client, arraytype)
-    return np.array(val)
+    return np.array(val, dtype=np.float64)
 
 def parse_list(client, listtype):
     with open(os.getcwd() + '\\clients\\' + client + '\\' + listtype + '.json', 'r') as f:
