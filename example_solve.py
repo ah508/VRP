@@ -18,18 +18,21 @@ def solve(client):
         with open(os.getcwd()+'\\clients\\'+client+'\\customer_info\\'+hold+'.json', 'r') as f:
             custinfo = json.load(f)
         add_vec.append(custinfo['proj_time'])
-        xpoints.append(custinfo['lat'])
-        ypoints.append(custinfo['lon'])
+        ypoints.append(custinfo['lat'])
+        xpoints.append(custinfo['lon'])
+    add_vec = np.array(add_vec)
     class Setup:
         def __init__(self, dur, dist, cost, x, y):
             self.c_matrix = dist
             self.d_matrix = dur
+            self.costvec = cost
             for row in self.d_matrix:
                 row += cost
             self.xpoints = x
             self.ypoints = y
     points = Setup(dur, dist, add_vec, xpoints, ypoints)
-    initials = math.sqrt(len(points.xpoints))//2
+    initials = int(math.sqrt(len(points.xpoints))//2)
+    print(initials)
     forray = []
     forray_costs = []
     for i in range(0, initials):
@@ -40,7 +43,7 @@ def solve(client):
         forray_costs.append(temp_sol.route_cost)
     ideal = forray[forray_costs.index(min(forray_costs))]
     # ADD INPUT FOR CONSTRAINTS
-    pathlist, pathdirectory = separate(ideal.history[-1][0].copy(), ideal.d_matrix, 28800, 5)
+    pathlist, pathdirectory = separate(ideal.history[-1][0].copy(), ideal.costs, 28800, 5)
     ideal.history.append(pathlist)
     procedure = TABU(points, ideal.history, pathlist, pathdirectory, 128748, 28800, 5, len(points.xpoints))
     procedure.tabu_search()
