@@ -27,6 +27,7 @@ class GenFunc:
         else:
             print('oops, something went wrong with finding successors.')
             print(type(vertex))
+            print(edges)
             input(':')
             return None
 
@@ -41,6 +42,7 @@ class GenFunc:
         else:
             print('oops, something went wrong with finding predecessors.')
             print(type(vertex))
+            print(edges)
             input(':')
             return None
 
