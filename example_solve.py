@@ -26,13 +26,14 @@ def solve(client):
             self.c_matrix = dist
             self.d_matrix = dur
             self.costvec = cost
-            for row in self.d_matrix:
-                row += cost
+            for loc in range(0, len(self.d_matrix)):
+                for dest in range(0, len(self.d_matrix)):
+                    if self.d_matrix[loc, dest] != 0:
+                        self.d_matrix[loc, dest] += self.costvec[dest]
             self.xpoints = x
             self.ypoints = y
     points = Setup(dur, dist, add_vec, xpoints, ypoints)
     initials = int(math.sqrt(len(points.xpoints))//2)
-    print(initials)
     forray = []
     forray_costs = []
     for i in range(0, initials):
@@ -43,6 +44,7 @@ def solve(client):
         forray_costs.append(temp_sol.route_cost)
     ideal = forray[forray_costs.index(min(forray_costs))]
     # ADD INPUT FOR CONSTRAINTS
+    # input('halt')
     pathlist, pathdirectory = separate(ideal.history[-1][0].copy(), ideal.costs, 28800, 5)
     ideal.history.append(pathlist)
     procedure = TABU(points, ideal.history, pathlist, pathdirectory, 128748, 28800, 5, len(points.xpoints))
@@ -75,18 +77,20 @@ def solve(client):
                 print('that file already exists.')
                 overwrite = input('would you like to overwrite this file?[y/n]: ')
                 if overwrite.lower() in ['yes', 'ye', 'yeah', 'y']:
-                    with open(savepath+'\\'+name, 'w') as f:
+                    with open(savepath+'\\'+name+'.json', 'w') as f:
                         json.dump(solveinfo, f, cls=npencode)
                     print('saved.')
+                    break
                 else:
                     rename = input('rename this solution?[y/n]: ')
                     if rename in ['n', 'no', 'nope', 'nay']:
                         print('solution not saved.')
                         break
             else:
-                with open(savepath+'\\'+name, 'w') as f:
+                with open(savepath+'\\'+name+'.json', 'w') as f:
                     json.dump(solveinfo, f, cls=npencode)
                 print('saved.')
+                break
     print(' ')
 
 def grabinfo(solvedcase):
@@ -185,6 +189,8 @@ class npencode(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, np.int64):
             return int(o)
+        if isinstance(o, np.ndarray):
+            return o.tolist()
         return json.JSONEncoder.default(self, o)
         
 
