@@ -2,9 +2,10 @@ import argparse
 import os
 import json
 import textwrap
-from info_work import make_dest, revise_working, get_working_map
+from info_work import make_dest, revise_working, get_working_map, set_info
 from maps_api import fetch_instantiate, fetch_new, new_data, instantiate_data, parse_addresses, set_depot
 from example_solve import solve
+from visualizers import display_prompt
 
 parser = argparse.ArgumentParser(description='operate with the VRP toolset')
 
@@ -26,6 +27,7 @@ while not escape:
         print('[setinfo] - set necessary information for the customer list')
         print('[weather] - forcibly update stored weather information')
         print('[work]    - revise the working customer list')
+        print('[visual]  - view visualizations, history, etc.')
         print('[solve]   - search for a solution')
         print('[exit]    - exit program')
         print(' ')
@@ -90,7 +92,10 @@ while not escape:
         set_depot(cur_client)
 
     elif choice == 'setinfo':
-        pass
+        set_info(cur_client)
+
+    elif choice == 'visual':
+        display_prompt(cur_client)
 
     elif choice == 'weather':
         pass
