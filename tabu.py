@@ -32,7 +32,7 @@ class TABU(SEARCH):
         except AttributeError:
             self.route_list = self.sn_star
         self.routeassign()
-        self.update_parameters(n_max=2000, alpha=1, beta=1, delta_max=0, cap_ten=set(), dist_ten=set(), tabu={})
+        self.update_parameters(n_max=self.tot_verts*50, alpha=1, beta=1, delta_max=0, cap_ten=set(), dist_ten=set(), tabu={})
         self.max_iter = self.cur_iter + self.n_max
         print(' ')
         print(' ')
@@ -51,7 +51,7 @@ class TABU(SEARCH):
         new_W = []
         for val in big_freq:
             new_W.append(self.select_freq.index(val))
-        self.update_parameters(n_max=40, alpha=1, beta=1, delta_max=0, cap_ten=set(), dist_ten=set(), W=new_W, tabu={}, q=len(new_W))
+        self.update_parameters(n_max=self.tot_verts, alpha=1, beta=1, delta_max=0, cap_ten=set(), dist_ten=set(), W=new_W, tabu={}, q=len(new_W))
         self.max_iter = self.cur_iter + self.n_max
         print(' ')
         print(' ')
@@ -99,6 +99,7 @@ class TABU(SEARCH):
         print(f'Overall Average E/s    : {self.cur_iter/c_time}')
         print(f'Number of routes       : {self.m}')
         print(f'ΔMAX                   : {self.delta_max}')
+        print(f'Gridlock Restarts      : {self.gridlock}')
         print(' ')
         print('Frequencies')
         print('-----------')

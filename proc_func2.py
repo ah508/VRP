@@ -28,6 +28,7 @@ class GenFunc:
             print('oops, something went wrong with finding successors.')
             print(type(vertex))
             print(edges)
+            print(self.offroute)
             input(':')
             return None
 
@@ -66,6 +67,11 @@ class GenFunc:
     def points_between(self, edges, v1, v2):
         if v1 == v2:
             return []
+        if v1 == None:
+            print('big problem')
+            print(v2)
+            print(edges)
+            raise TypeError
         return [v1] + self.points_between(edges, self.find_successor(v1, edges), v2)
 
     def test_valid(self, edgeset, pre_change=[], indicator='+', v=None, i=None, j=None, k=None, l=None):

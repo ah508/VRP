@@ -10,8 +10,9 @@ class SEARCH(GenFunc):
     def __init__(self, points, history, routes, route_identifiers, max_cap, max_len, q, n_max):
         super().__init__(points)
         self.time = time.process_time()
+        self.gridlock = 0
         self.history = history
-        self.tot_verts = len(self.costs)
+        self.tot_verts = len(points.costvec)
         self.route_list = routes
         self.route_ref = route_identifiers
         self.m = len(set(self.route_ref)-set([None]))
@@ -109,7 +110,16 @@ class SEARCH(GenFunc):
                     candidate_set[cand_tag] = candidate
                     cand_tag += 1
             min_pair = self.best_candidate(candidate_set)
-            next_move = candidate_set[min_pair[0]]
+            try:
+                next_move = candidate_set[min_pair[0]]
+            except KeyError:
+                self.gridlock += 1
+                # print('###########################################################################')
+                # print('keyerror')
+                # print(min_pair)
+                # print(candidate_set)
+                # input('halt')
+                continue
             if self.us_clear:
                 if next_move['f2'] > cost_cur_route[1]:
                     if cost_cur_route[2]:
@@ -198,13 +208,15 @@ class SEARCH(GenFunc):
             self.f2_star = iv_cost
 
     def neighbor_routes(self, vertex, empties):
-        distances = self.dist[vertex]#.copy()
+        distances = self.dist[vertex].copy()
         # distances[vertex] = math.inf
         nearest = heapq.nsmallest(self.p1, distances)
         neighbors = []
         for i in nearest:
             if i != 0:
-                neighbors.append(np.where(distances==i)[0][0])
+                q = np.where(distances==i)[0][0]
+                neighbors.append(q)
+                distances[q] == math.inf
         banned = self.route_list[self.route_ref[vertex]]
         neighborhood = set(empties.copy())
         for friend in neighbors:
@@ -219,6 +231,12 @@ class SEARCH(GenFunc):
             self.p_neighborhoods[vertex] = {}
             for route in range(0, self.m_hat):
                 self.p_neighborhoods[vertex][route] = self.neighbors_on(route, vertex)
+                for i in self.p_neighborhoods[vertex][route]:
+                    if i not in self.route_list[route]:
+                        print('EARLY HIT')
+                        print(self.route_list[route])
+                        print(self.p_neighborhoods[vertex][route])
+                        input('halt')
 
     def neighbors_on(self, route_num, vertex):
         distances = self.dist[vertex].copy()
@@ -233,7 +251,9 @@ class SEARCH(GenFunc):
         neighbors = []
         for i in nearest:
             if i != math.inf:
-                neighbors.append(np.where(distances==i)[0][0])
+                q = valid.index(i)
+                neighbors.append(q)
+                valid[q] = math.inf
         return neighbors
     
     def valid_cost(self, routes):
@@ -321,7 +341,16 @@ class SEARCH(GenFunc):
                 if j == vip:
                     continue
                 vj1 = self.find_successor(j, d_set)
-                i1_to_j = self.points_between(d_set, vi1, j)
+                try:
+                    i1_to_j = self.points_between(d_set, vi1, j)
+                except RecursionError:
+                    print('i1toj')
+                    print(f'j: {j}')
+                    print(f'i1: {vi1}')
+                    print(f'vi: {vi}')
+                    print('routes:')
+                    print(edgeset)
+                    input('halt')
                 j1_to_i = self.points_between(d_set, vj1, vi)
                 vk = self.p_neighborhoods[vip][edgeset_index]
                 for k in vk:
@@ -396,7 +425,17 @@ class SEARCH(GenFunc):
                         continue
                     if i == j:
                         continue
-                    j_to_i = self.points_between(d_set, j, i)
+                    try:
+                        j_to_i = self.points_between(d_set, j, i)
+                    except TypeError:
+                        print('jtoi')
+                        print(f'j: {j}')
+                        print(f'i: {i}')
+                        print(f'v: {vertex}')
+                        print(f'vi: {vi}')
+                        print('route:')
+                        print(edgeset)
+                        input('halt')
                     i_to_j = self.points_between(d_set, i, j)
                     vj1 = self.find_successor(j, d_set)
                     vk = self.p_neighborhoods[vi1][edgeset_index]
@@ -465,7 +504,16 @@ class SEARCH(GenFunc):
                 if j == vip:
                     continue
                 vj1 = self.find_successor(j, d_set)
-                i1_to_j = self.points_between(d_set, vi1, j)
+                try:
+                    i1_to_j = self.points_between(d_set, vi1, j)
+                except RecursionError:
+                    print('i1toj')
+                    print(f'j: {j}')
+                    print(f'i1: {vi1}')
+                    print(f'vi: {vi}')
+                    print('routes:')
+                    print(edgeset)
+                    input('halt')
                 j1_to_i = self.points_between(d_set, vj1, vi)
                 vk = self.p_neighborhoods[vip][edgeset_index]
                 for k in vk:
@@ -516,6 +564,9 @@ class SEARCH(GenFunc):
         else:
             val = ' '
         tim = time.process_time() - self.time
-        eps = self.cur_iter/tim
+        try:
+            eps = self.cur_iter/tim
+        except ZeroDivisionError:
+            eps = 8008.0
         out = '|{:^3}|{:^3}|{:>6}|{:>5}|{:>8.1f}|{:>9.2f}|{:>9g}|{:>9g}|{:^3}|{:>8g}|{:>8g}|{:^3}|{:^9.3f}|{:^9.3f}|{:>6.2f}|{:^3}|'.format(f1plus, f2plus, self.cur_iter, self.max_iter, tim, eps, self.f1_star, self.f2_star, val, f1, f2, self.m, self.alpha, self.beta, self.delta_max, u)
         print(out)

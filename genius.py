@@ -8,6 +8,7 @@ from proc_func2 import GenFunc
 class GENIUS(GenFunc):
     def __init__(self, points):
         super().__init__(points)
+        self.points = points
         self.offroute = list(range(0, len(points.costvec)))
         self.history = []
         self.onroute = []
@@ -66,6 +67,16 @@ class GENIUS(GenFunc):
                     if i == j:
                         continue
                     j_to_i = self.points_between(d_set, j, i)
+                    # except TypeError:
+                    #     print(f'j: {j}')
+                    #     print(f'i: {i}')
+                    #     print(f'v: {vertex}')
+                    #     print(f'vi: {vi}')
+                    #     print(f'offroute: {self.offroute}')
+                    #     print(f'onroute: {self.onroute}')
+                    #     print('neighborhoods:')
+                    #     print(self.p_neighborhood)
+                    #     input('halt')
                     i_to_j = self.points_between(d_set, i, j)
                     vj1 = self.find_successor(j, d_set)
                     vk = self.p_neighborhood[vi1]
@@ -110,7 +121,20 @@ class GENIUS(GenFunc):
         neighbors = []
         for i in nearest:
             if i != math.inf:
-                neighbors.append(np.where(distances==i)[0][0])
+                q = valid.index(i)
+                neighbors.append(q)
+                valid[q] = math.inf
+        # for val in neighbors:
+        #     if val in self.offroute:
+        #         print(f'key: {vertex}, value: {neighbors}')
+        #         print(f'off: {self.offroute}')
+        #         print(f'on: {self.onroute}')
+        #         print(f'alleged valid: {valid}')
+        #         print(f'near: {nearest}')
+        #         for i in nearest:
+        #             if i != math.inf:
+        #                 print(np.where(distances==i)[0][0])
+        #         input('halt')
         return neighbors
 
     def get_neighborhoods(self, p):
@@ -120,6 +144,13 @@ class GENIUS(GenFunc):
         for vertex in self.onroute:
             neighborhood = self.p_neighbors(vertex, p)
             self.p_neighborhood[vertex] = neighborhood
+        # for k, v in self.p_neighborhood.items():
+        #     for value in v:
+        #         if value in self.offroute:
+        #             print(f'key: {k}, value: {v}')
+        #             print(f'off: {self.offroute}')
+        #             print(f'on: {self.onroute}')
+        #             input('halt')
 
     def execute_move(self, move):
         self.edges = move['frame']
