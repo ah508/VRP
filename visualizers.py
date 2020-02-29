@@ -39,19 +39,17 @@ def disp_addresses(client):
         xpoints[i] = custinfo['lon']
     max_x = max(xpoints)
     min_x = min(xpoints)
-    xdiff = (max_x - min_x)*1.05
+    xdiff = (max_x - min_x)*0.1
     max_y = max(ypoints)
     min_y = min(ypoints)
-    ydiff = (max_y - min_y)*1.05
+    ydiff = (max_y - min_y)*0.1
 
     plt.scatter(xpoints, ypoints, c=color, alpha=0.7)
     plt.xlim(min_x - xdiff, max_x + xdiff)
     plt.ylim(min_y - ydiff, max_y + ydiff)
     for i, n in enumerate(names):
-        plt.annotate(n, (xpoints[i], ypoints[i]))
+        plt.annotate(n, (xpoints[i], ypoints[i]), fontsize=5)
     plt.show()
-
-    
 
 def disp_history(client):
     pass
