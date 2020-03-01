@@ -28,7 +28,6 @@ class GenFunc:
             print('oops, something went wrong with finding successors.')
             print(type(vertex))
             print(edges)
-            print(self.offroute)
             input(':')
             return None
 
