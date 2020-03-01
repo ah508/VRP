@@ -1,0 +1,15 @@
+issue with finding successors
+
+potential causes?
+- inclusion of multiple matrices: unlikely
+- confusion between matrices: possible, but unlikely
+- change in input data format: probable
+- change to initial offroute construction: extremely unlikely
+- magic pixies: inevitable
+
+double check input format, and matrix handling.
+
+--SOLVED--
+it was a problem with neighborhood determination caused by
+some unexpected behavior with np.where()
+___________________________________________________________________________________________________
