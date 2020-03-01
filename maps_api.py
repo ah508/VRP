@@ -61,7 +61,6 @@ def instantiate_data(cur_client, customer_list):
     for loc in nadresses:
         jdump(path+'\\customer_info\\'+loc+'.json', base_dict)
 
-
 def fetch_new(cur_client, customer):
     path = os.getcwd() + '\\clients\\' + cur_client
     addresses, omitted, working = parse_addresses(cur_client)

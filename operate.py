@@ -4,7 +4,7 @@ import json
 import textwrap
 from info_work import make_dest, revise_working, get_working_map, set_info
 from maps_api import fetch_instantiate, fetch_new, new_data, instantiate_data, parse_addresses, set_depot
-from example_solve import solve
+from example_solve import solve, naive_addition
 from visualizers import display_prompt
 
 parser = argparse.ArgumentParser(description='operate with the VRP toolset')
@@ -29,6 +29,7 @@ while not escape:
         print('[work]    - revise the working customer list')
         print('[visual]  - view visualizations, history, etc.')
         print('[solve]   - search for a solution')
+        print('[manage]  - manage saved routes and route seeds')
         print('[exit]    - exit program')
         print(' ')
         continue
@@ -44,6 +45,8 @@ while not escape:
             os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\customer_info')
             os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\weather_info')
             os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\route_info')
+            os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\route_info' + '\\solution_dumps')
+            os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\route_info' + '\\routes')
         except FileExistsError:
             print('client already exists')
             continue
@@ -121,6 +124,10 @@ while not escape:
 
     elif choice == 'solve':
         solve(cur_client)
+        # naive_addition(cur_client)
+
+    elif choice == 'manage':
+        pass
 
     elif choice == 'exit':
         escape = True
