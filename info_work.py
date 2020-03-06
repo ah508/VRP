@@ -1,6 +1,7 @@
 import numpy as np
 import json
 import os
+import re
 import textwrap
 from maps_api import parse_addresses, parse_array, parse_list
 
@@ -53,45 +54,61 @@ def revise_working(client):
     addresses, omitted, working = parse_addresses(client)
     work = set(working)
     correct = False
-    for i in working:
-        print(i)
+    print('{:<25}    {:<25}'.format('addresses', 'working list'))
+    for i in range(0, len(addresses)):
+        if addresses[i] in work:
+            out = '{:<25} ::   ✔'.format(textwrap.shorten(addresses[i], 22, placeholder='...'))
+        elif addresses[i] not in work:
+            out = '{:<25} ::    '.format(textwrap.shorten(addresses[i], 22, placeholder='...'))
+        print(out)
     while not correct:
         nix = True
         while nix:
-            drop = input('remove an address from the working list?[y/n]: ')
+            drop = input('remove from the working list?[y/n]: ')
             if drop.lower() in ['y', 'yes', 'yeah', 'ye']:
-                removal = input('input the address to remove: ')
-                if removal == addresses[0]:
-                    print('you cannot remove the depot')
-                elif removal in work:
-                    work.remove(removal)
+                removal = input('input the address/re to remove: ')
+                if removal == 'all':
+                    work = set([addresses[0]])
                 else:
-                    print('that is not a current working address')
+                    matcher = re.compile(removal)
+                    removal_list = []
+                    for element in work:
+                        if element == addresses[0]:
+                            pass
+                        elif matcher.search(element) != None:
+                            removal_list.append(element)
+                    for drop in removal_list:
+                        work.remove(drop)
+                        print(f'removed {drop}')
             else:
                 nix = False
             print(' ')
         pile = True
         while pile:
-            add = input('add an address to the working list?[y/n]: ')
+            add = input('add to the working list?[y/n]: ')
             if add.lower() in ['y', 'yes', 'yeah', 'ye']:
-                addition = input('input the address to add: ')
-                if addition in addresses:
-                    work.add(addition)
+                addition = input('input the address/re to add: ')
+                if addition == 'all':
+                    work = set(addresses)
                 else:
-                    print('that is not a known address')
+                    matcher = re.compile(addition)
+                    addition_list = []
+                    for element in addresses:
+                        if matcher.search(element) != None:
+                            addition_list.append(element)
+                    for stuff in addition_list:
+                        work.add(stuff)
+                        print(f'added {stuff}')
             else:
                 pile = False
             print(' ')
-        for i in range(0, len(set(working) | set(work))):
-            try:
-                if working[i] in work:
-                    out = '{:<20} -----> {:<20}'.format(textwrap.shorten(addresses[i], 17, placeholder='...'), textwrap.shorten(addresses[i], 17, placeholder='...'))
-                elif working[i] not in work:
-                    out = '{:<20} -----> '.format(textwrap.shorten(working[i], 17, placeholder='...'))
-            except IndexError:
-                for j in work:
-                    if j not in working:
-                        out = '                     -----> {:<20}'.format(textwrap.shorten(j, 17, placeholder='...'))
+        print('{:<25}    {:<25}'.format('addresses', 'working list'))
+        print('-----------------------------------------')
+        for i in range(0, len(addresses)):
+            if addresses[i] in work:
+                out = '{:<25} ::   ✔'.format(textwrap.shorten(addresses[i], 22, placeholder='...'))
+            elif addresses[i] not in work:
+                out = '{:<25} ::    '.format(textwrap.shorten(addresses[i], 22, placeholder='...'))
             print(out)
         print(' ')
         affirm = input('are these changes correct?[y/n]: ')
