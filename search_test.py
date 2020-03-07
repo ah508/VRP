@@ -7,11 +7,11 @@ import heapq
 import time
 
 class SEARCH(GenFunc):
-    def __init__(self, points, history, routes, route_identifiers, max_cap, max_len, q, n_max):
+    def __init__(self, points, routes, route_identifiers, max_cap, max_len, q, n_max): #history removed
         super().__init__(points)
         self.time = time.process_time()
         self.gridlock = 0
-        self.history = history
+        # self.history = history
         self.tot_verts = len(points.costvec)
         self.route_list = routes
         self.route_ref = route_identifiers
@@ -181,7 +181,7 @@ class SEARCH(GenFunc):
         if f1_bump or f2_bump:
             self.max_iter = self.cur_iter + self.n_max
         self.cur_iter += 1
-        self.history.append(move['frame'])
+        # self.history.append(move['frame'])
 
     def check_ten(self, route):
         self.sol_cost(route, fetch=True)

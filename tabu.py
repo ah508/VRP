@@ -10,9 +10,9 @@ from search_test import SEARCH
 import heapq
 
 class TABU(SEARCH):
-    def __init__(self, points, history, routes, route_identifiers, max_cap, max_len, q, n_max):
+    def __init__(self, points, routes, route_identifiers, max_cap, max_len, q, n_max): #history removed
         print('Initializing Values')
-        super().__init__(points, history, routes, route_identifiers, max_cap, max_len, q, n_max)
+        super().__init__(points, routes, route_identifiers, max_cap, max_len, q, n_max) #history removed
         self.prev_iterations = 0
         self.prev_time = self.time
 
@@ -65,7 +65,7 @@ class TABU(SEARCH):
             self.route_list = self.s_star
         except AttributeError:
             self.route_list = self.sn_star
-        self.history.append(self.route_list)
+        # self.history.append(self.route_list)
         route_costs = []
         for route in self.route_list:
             route_costs.append(self.circuit_cost(route))

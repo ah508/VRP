@@ -49,15 +49,15 @@ def solve(client):
     t_constraint = input('please enter a (general) time constraint [in seconds]: ')
     r_num = input('please enter a limit on the number of routes: ')
     d_constraint = input('please enter a (general) distance constraint [in meters]: ')
-    pathlist, pathdirectory = separate(ideal.history[-1][0].copy(), ideal.costs, int(t_constraint), int(r_num))
-    ideal.history.append(pathlist)
-    procedure = TABU(points, ideal.history, pathlist, pathdirectory, int(d_constraint), int(t_constraint), int(r_num), len(points.xpoints))
+    pathlist, pathdirectory = separate(ideal.edges.copy(), ideal.costs, int(t_constraint), int(r_num))
+    # ideal.history.append(pathlist)
+    procedure = TABU(points, pathlist, pathdirectory, int(d_constraint), int(t_constraint), int(r_num), len(points.xpoints))
     procedure.tabu_search()
     save = input('save this solution?[y/n]: ')
     if save.lower() in ['y', 'yes', 'ye', 'yeah']:
         t = time.localtime()
         timestamp = str(t.tm_mon) + '/' + str(t.tm_mday) + '/' + str(t.tm_year) + ' @ ' + str(t.tm_hour) + ':' + str(t.tm_min)
-        history = parse_history(procedure.history, points)
+        # history = parse_history(procedure.history, points)
         feasible, infeasible = grabinfo(procedure, points)
         selection_frequency = ['{:.3%}'.format(i) for i in procedure.select_freq]
         solveinfo = {
@@ -70,7 +70,7 @@ def solve(client):
             'duration matrix' : dur,
             'distance matrix' : dist,
             'projection vector' : add_vec,
-            'history' : history,
+            # 'history' : history,
             'solve parameters' : None
         }
         n1 = 0
@@ -289,15 +289,15 @@ def naive_addition(client):
         t_constraint = input('please enter a (general) time constraint [in seconds]: ')
         r_num = input('please enter a limit on the number of routes: ')
         d_constraint = input('please enter a (general) distance constraint [in meters]: ')
-        pathlist, pathdirectory = separate(ideal.history[-1][0].copy(), ideal.costs, int(t_constraint), int(r_num))
-        ideal.history.append(pathlist)
-        procedure = TABU(points, ideal.history, pathlist, pathdirectory, int(d_constraint), int(t_constraint), int(r_num), len(points.xpoints))
+        pathlist, pathdirectory = separate(ideal.edges.copy(), ideal.costs, int(t_constraint), int(r_num))
+        # ideal.history.append(pathlist)
+        procedure = TABU(points, pathlist, pathdirectory, int(d_constraint), int(t_constraint), int(r_num), len(points.xpoints))
         procedure.tabu_search()
         save = input('save this solution?[y/n]: ')
         if save.lower() in ['y', 'yes', 'ye', 'yeah']:
             t = time.localtime()
             timestamp = str(t.tm_mon) + '/' + str(t.tm_mday) + '/' + str(t.tm_year) + ' @ ' + str(t.tm_hour) + ':' + str(t.tm_min)
-            history = parse_history(procedure.history, points)
+            # history = parse_history(procedure.history, points)
             feasible, infeasible = grabinfo(procedure, points)
             selection_frequency = ['{:.3%}'.format(i) for i in procedure.select_freq]
             solveinfo = {
@@ -310,7 +310,7 @@ def naive_addition(client):
                 'duration matrix' : dur,
                 'distance matrix' : dist,
                 'projection vector' : add_vec,
-                'history' : history,
+                # 'history' : history,
                 'solve parameters' : None
             }
             n1 = 0

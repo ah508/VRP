@@ -10,7 +10,7 @@ class GENIUS(GenFunc):
         super().__init__(points)
         self.points = points
         self.offroute = list(range(0, len(points.costvec)))
-        self.history = []
+        # self.history = []
         self.onroute = []
         self.p_neighborhood = {}
         self.edges = [None] * len(points.costvec)
@@ -35,7 +35,7 @@ class GENIUS(GenFunc):
         self.edges[v1] = v2
         self.edges[v2] = 0
         self.route_cost = self.circuit_cost(self.edges)
-        self.history.append([self.edges])
+        # self.history.append([self.edges])
         self.get_neighborhoods(5)
 
     def cycle(self):
@@ -155,7 +155,7 @@ class GENIUS(GenFunc):
     def execute_move(self, move):
         self.edges = move['frame']
         self.route_cost = move['cost']
-        self.history.append([self.edges])
+        # self.history.append([self.edges])
 
     def post_opt(self):
         tau = self.edges.copy()
@@ -173,7 +173,7 @@ class GENIUS(GenFunc):
                 self.route_cost = zed
                 print(f'Improvement to: {zed}')
                 t = 1
-                self.history.append([self.edges])
+                # self.history.append([self.edges])
             elif zed >= self.route_cost:
                 t += 1
 
