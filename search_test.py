@@ -57,27 +57,27 @@ class SEARCH(GenFunc):
             for vertex in selected_verts:
                 self.set_p1(vertex)
                 transfers = self.neighbor_routes(vertex, empties)
-                for ri in transfers:
-                    if vertex in self.route_list[ri]:
-                        print('MID HIT')
-                        print(vertex)
-                        print(transfers)
-                        print(self.route_ref)
-                        print(ri)
-                        for i in self.route_list:
-                            print(i)
-                        input(':')
+                # for ri in transfers:
+                    # if vertex in self.route_list[ri]:
+                    #     print('MID HIT')
+                    #     print(vertex)
+                    #     print(transfers)
+                    #     print(self.route_ref)
+                    #     print(ri)
+                    #     for i in self.route_list:
+                    #         print(i)
+                    #     input(':')
                 transfers = transfers - set([self.route_ref[vertex]])
                 del_route = self.extract(vertex, self.route_ref[vertex])
-                if vertex in del_route:
-                    print('EARLY HIT')
-                    print(vertex)
-                    print(transfers)
-                    print(self.route_ref)
-                    print(ri)
-                    for i in self.route_list:
-                        print(i)
-                    input(':')
+                # if vertex in del_route:
+                #     print('EARLY HIT')
+                #     print(vertex)
+                #     print(transfers)
+                #     print(self.route_ref)
+                #     print(ri)
+                #     for i in self.route_list:
+                #         print(i)
+                #     input(':')
                 for route_index in transfers:
                     route_adjust = self.insert(vertex, route_index)
                     move = self.route_list.copy()
@@ -270,13 +270,13 @@ class SEARCH(GenFunc):
             v_cost, cost_vector, cap_vector = self.valid_cost(routes)
             d_check = set()
             c_check = set()
-            for route_cost in cost_vector:
-                if max(0, route_cost-self.time_const) > 0:
+            for r_cost in range(0, len(cost_vector)):
+                if max(0, cost_vector[r_cost] - self.time_const[r_cost]) > 0: ################################
                     d_check.add(False)
                 else:
                     d_check.add(True)
-            for cap_cost in cap_vector:
-                if max(0, cap_cost-self.cap_const) > 0:
+            for c_cost in range(0, len(cap_vector)):
+                if max(0, cap_vector[c_cost] - self.cap_const[c_cost]) > 0: ####################################
                     c_check.add(False)
                 else:
                     c_check.add(True)
@@ -287,10 +287,10 @@ class SEARCH(GenFunc):
         valid = False
         cap_over = 0
         time_over = 0
-        for route_cost in cost_vector:
-            time_over += max(0, route_cost-self.time_const)
-        for cap_cost in cap_vector:
-            cap_over += max(0, cap_cost - self.cap_const)
+        for r_cost in range(0, len(cost_vector)):
+            time_over += max(0, cost_vector[r_cost] - self.time_const[r_cost]) #####################################
+        for c_cost in range(0, len(cap_vector)):
+            cap_over += max(0, cap_vector[c_cost] - self.cap_const[c_cost]) ######################################
         time_over_tot = self.beta*time_over
         cap_over_tot = self.alpha*cap_over
         iv_cost = v_cost + cap_over_tot + time_over_tot

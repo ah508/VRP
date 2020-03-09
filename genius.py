@@ -6,10 +6,12 @@ import heapq
 from proc_func2 import GenFunc
 
 class GENIUS(GenFunc):
-    def __init__(self, points):
+    def __init__(self, points, forbidden=[]):
         super().__init__(points)
         self.points = points
         self.offroute = list(range(0, len(points.costvec)))
+        for i in forbidden:
+            self.offroute.remove(i)
         # self.history = []
         self.onroute = []
         self.p_neighborhood = {}
@@ -163,8 +165,11 @@ class GENIUS(GenFunc):
         t = 1
         n = len(self.edges)
         print(f'Starting cost: {zed}')
-        while t != n + 1:
-            if t == n:
+        while t != n:
+            if tau[t] == None:
+                t += 1
+                continue
+            if tau[t] == 0:
                 tau, zed = self.reinsert_vertex(0, tau)
             else:
                 tau, zed = self.reinsert_vertex(t, tau)

@@ -208,7 +208,7 @@ def separate(path, distances, constraint, path_num):
     # print('something is probably wrong with distance checking')
     path_directory = [None] * len(path)
     path_list = [None] * path_num
-    vertices_remaining = len(path) - 1
+    vertices_remaining = len(set(path)-set([None])) - 1
     for loop in range(0, path_num):
         arbpath = [None] * len(path)
         valid_const = True
@@ -219,7 +219,7 @@ def separate(path, distances, constraint, path_num):
         while vertices_remaining > 0 and valid_const and safety < 1000:
             d_check = dist_track + distances[index_track, path[index_track]]
             l_check = d_check + distances[path[index_track], 0]
-            if l_check <= constraint:
+            if l_check <= constraint[loop]:
                 dist_track += distances[index_track, path[index_track]]
                 arbpath[index_track] = path[index_track]
                 path[index_track] = None

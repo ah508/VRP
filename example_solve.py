@@ -6,10 +6,12 @@ import json
 import math
 import time
 from genius import GENIUS
+from route_settings import default
 import numpy as np
 from tabu import TABU
 from proc_func2 import separate
 from safekeeping import dist as d_key
+
 
 def solve(client):
     dist, dur, backmap, addresses = get_working_map(client)
@@ -46,12 +48,11 @@ def solve(client):
         forray.append(temp_sol)
         forray_costs.append(temp_sol.route_cost)
     ideal = forray[forray_costs.index(min(forray_costs))]
-    t_constraint = input('please enter a (general) time constraint [in seconds]: ')
-    r_num = input('please enter a limit on the number of routes: ')
-    d_constraint = input('please enter a (general) distance constraint [in meters]: ')
-    pathlist, pathdirectory = separate(ideal.edges.copy(), ideal.costs, int(t_constraint), int(r_num))
+    # settings = input('input settings: ')
+    # set_val = getattr(route_settings, settings)
+    pathlist, pathdirectory = separate(ideal.edges.copy(), ideal.costs, default['time_const'], len(default['crew_params']))
     # ideal.history.append(pathlist)
-    procedure = TABU(points, pathlist, pathdirectory, int(d_constraint), int(t_constraint), int(r_num), len(points.xpoints))
+    procedure = TABU(points, pathlist, pathdirectory, default['dist_const'], default['time_const'], len(default['crew_params']), len(points.xpoints))
     procedure.tabu_search()
     save = input('save this solution?[y/n]: ')
     if save.lower() in ['y', 'yes', 'ye', 'yeah']:
