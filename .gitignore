@@ -7,3 +7,5 @@ mapinterface.py
 weatherinterface.py
 .vscode/*
 clients/*
+testdump.json
+weatherdump.json
