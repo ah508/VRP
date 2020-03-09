@@ -7,8 +7,8 @@ class GenFunc:
     """
     
     def __init__(self, points):
-        self.dist = points.d_matrix
-        self.costs = points.c_matrix
+        self.duration = points.d_matrix
+        self.fuel_cost = points.c_matrix
 
     def checkinit(self):
         if hasattr(self, 'dist'):
@@ -105,18 +105,18 @@ class GenFunc:
                     min_pair = [key, candidates[key]['cost']]
         return min_pair
 
-    def circuit_cost(self, circuit):
+    def time_cost(self, circuit):
         cost = 0
         for vertex, pointer in enumerate(circuit):
             if pointer != None:
-                cost += self.dist[vertex, pointer]
+                cost += self.duration[vertex, pointer]
         return cost
     
-    def point_cost(self, circuit):
+    def gas_cost(self, circuit):
         cost = 0
-        for vertex in circuit:
-            if vertex != None:
-                cost += self.costs[circuit.index(vertex)][vertex]
+        for vertex, pointer in enumerate(circuit):
+            if pointer != None:
+                cost += self.fuel_cost[vertex][pointer]
         return cost
 
     def t1_string(self, pointers, i, j, k, v):
@@ -141,7 +141,7 @@ class GenFunc:
             print('CAUGHT')
             print([v, i, j, k])
             move['frame'] = pointers
-        move['cost'] = self.circuit_cost(move['frame'])
+        move['cost'] = self.time_cost(move['frame'])
         return move
 
     def t2_string(self, pointers, i, j, k, l, v):
@@ -166,7 +166,7 @@ class GenFunc:
             print('CAUGHT')
             print([v, i, j, k])
             move['frame'] = pointers
-        move['cost'] = self.circuit_cost(move['frame'])
+        move['cost'] = self.time_cost(move['frame'])
         return move
 
     def t1_unstring(self, pointers, j, k, v):
@@ -204,7 +204,7 @@ class GenFunc:
             return None
         return move
 
-def separate(path, distances, constraint, path_num):
+def separate(path, t_mat, f_mat, t_constraint, f_constraint, path_num):
     # print('something is probably wrong with distance checking')
     path_directory = [None] * len(path)
     path_list = [None] * path_num
@@ -213,14 +213,19 @@ def separate(path, distances, constraint, path_num):
         arbpath = [None] * len(path)
         valid_const = True
         index_track = 0
-        dist_track = 0
-        home_val = 0
+        t_track = 0
+        f_track = 0
+        home_val_t = 0
+        home_val_f = 0
         safety = 0
         while vertices_remaining > 0 and valid_const and safety < 1000:
-            d_check = dist_track + distances[index_track, path[index_track]]
-            l_check = d_check + distances[path[index_track], 0]
-            if l_check <= constraint[loop]:
-                dist_track += distances[index_track, path[index_track]]
+            d_check = t_track + t_mat[index_track, path[index_track]]
+            g_check = f_track + f_mat[index_track, path[index_track]]
+            l_check = d_check + t_mat[path[index_track], 0]
+            l_check_two = g_check + f_mat[path[index_track], 0]
+            if l_check <= t_constraint[loop] and l_check_two <= f_constraint[loop]:
+                t_track += t_mat[index_track, path[index_track]]
+                f_track += f_mat[index_track, path[index_track]]
                 arbpath[index_track] = path[index_track]
                 path[index_track] = None
                 if index_track != 0:
@@ -228,7 +233,8 @@ def separate(path, distances, constraint, path_num):
                     vertices_remaining -= 1
                 index_track = arbpath[index_track]
             elif loop != path_num-1:
-                dist_track += home_val
+                t_track += home_val_t
+                f_track += home_val_f
                 arbpath[index_track] = 0
                 path[0] = path[index_track]
                 valid_const = False
@@ -236,14 +242,16 @@ def separate(path, distances, constraint, path_num):
                     path_directory[index_track] = loop
                     vertices_remaining -= 1
             else:
-                dist_track += d_check
+                t_track += d_check
+                f_track += g_check
                 arbpath[index_track] = path[index_track]
                 path[index_track] = None
                 if index_track != 0:
                     path_directory[index_track] = loop
                     vertices_remaining -= 1
                 index_track = arbpath[index_track]
-            home_val = distances[arbpath[index_track], 0]
+            home_val_t = t_mat[arbpath[index_track], 0]
+            home_val_f = f_mat[arbpath[index_track], 0]
             safety += 1
         if safety == 1000:
             raise ResourceWarning('potentially infinite loop')

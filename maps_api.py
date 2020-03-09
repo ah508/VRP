@@ -56,6 +56,7 @@ def instantiate_data(cur_client, customer_list):
         'lat' : 0,
         'lon' : 0,
         'proj_time' : 0,
+        'proj_fuel' : 0,
         'dF' : 0,
         'preset' : False
     }
@@ -111,6 +112,7 @@ def new_data(cur_client, customer):
             'lat' : 0,
             'lon' : 0,
             'proj_time' : 0,
+            'proj_fuel' : 0,
             'dF' : 0,
             'preset' : False
         }

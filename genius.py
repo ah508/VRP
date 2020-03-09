@@ -9,13 +9,13 @@ class GENIUS(GenFunc):
     def __init__(self, points, forbidden=[]):
         super().__init__(points)
         self.points = points
-        self.offroute = list(range(0, len(points.costvec)))
+        self.offroute = list(range(0, len(points.time_cost)))
         for i in forbidden:
             self.offroute.remove(i)
         # self.history = []
         self.onroute = []
         self.p_neighborhood = {}
-        self.edges = [None] * len(points.costvec)
+        self.edges = [None] * len(points.time_cost)
         self.route_cost = 0
         self.initialize()
 
@@ -36,7 +36,7 @@ class GENIUS(GenFunc):
         self.edges[0] = v1
         self.edges[v1] = v2
         self.edges[v2] = 0
-        self.route_cost = self.circuit_cost(self.edges)
+        self.route_cost = self.time_cost(self.edges)
         # self.history.append([self.edges])
         self.get_neighborhoods(5)
 
@@ -112,7 +112,7 @@ class GENIUS(GenFunc):
             return None
 
     def p_neighbors(self, vertex, p):
-        distances = self.dist[vertex].copy()
+        distances = self.duration[vertex].copy()
         valid = []
         for i in range(0, len(distances)):
             if i != vertex and i in self.onroute:

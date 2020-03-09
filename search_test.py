@@ -12,7 +12,7 @@ class SEARCH(GenFunc):
         self.time = time.process_time()
         self.gridlock = 0
         # self.history = history
-        self.tot_verts = len(points.costvec)
+        self.tot_verts = len(points.time_cost)
         self.route_list = routes
         self.route_ref = route_identifiers
         self.m = len(set(self.route_ref)-set([None]))
@@ -208,15 +208,15 @@ class SEARCH(GenFunc):
             self.f2_star = iv_cost
 
     def neighbor_routes(self, vertex, empties):
-        distances = self.dist[vertex].copy()
-        # distances[vertex] = math.inf
-        nearest = heapq.nsmallest(self.p1, distances)
+        durations = self.duration[vertex].copy()
+        # durations[vertex] = math.inf
+        nearest = heapq.nsmallest(self.p1, durations)
         neighbors = []
         for i in nearest:
             if i != 0:
-                q = np.where(distances==i)[0][0]
+                q = np.where(durations==i)[0][0]
                 neighbors.append(q)
-                distances[q] == math.inf
+                durations[q] == math.inf
         banned = self.route_list[self.route_ref[vertex]]
         neighborhood = set(empties.copy())
         for friend in neighbors:
@@ -239,12 +239,12 @@ class SEARCH(GenFunc):
                         input('halt')
 
     def neighbors_on(self, route_num, vertex):
-        distances = self.dist[vertex].copy()
+        durations = self.duration[vertex].copy()
         working_circuit = self.route_list[route_num]
         valid = []
-        for i in range(0, len(distances)):
+        for i in range(0, len(durations)):
             if i != vertex and i in working_circuit:
-                valid.append(distances[i])
+                valid.append(durations[i])
             else:
                 valid.append(math.inf)
         nearest = heapq.nsmallest(self.p2, valid)
@@ -257,13 +257,13 @@ class SEARCH(GenFunc):
         return neighbors
     
     def valid_cost(self, routes):
-        individ_cost = []
-        individ_cap = []
+        individ_time_cost = []
+        individ_fuel_cap = []
         for route in routes:
-            individ_cost.append(self.circuit_cost(route))
-            individ_cap.append(self.point_cost(route))
-        total_cost = sum(individ_cost)
-        return total_cost, individ_cost, individ_cap
+            individ_time_cost.append(self.time_cost(route))
+            individ_fuel_cap.append(self.gas_cost(route))
+        total_time = sum(individ_time_cost)
+        return total_time, individ_time_cost, individ_fuel_cap
 
     def sol_cost(self, routes, fetch=False):
         if fetch:
@@ -361,7 +361,7 @@ class SEARCH(GenFunc):
                     if k in i1_to_j:
                         move = self.t1_unstring(d_set, j, k, vi)
                         possible_moves[move_key] = {'frame' : move,
-                                                    'cost' : self.circuit_cost(move)}
+                                                    'cost' : self.time_cost(move)}
                         move_key += 1
                     if k in j1_to_i:
                         vk1 = self.find_successor(k, d_set)
@@ -376,7 +376,7 @@ class SEARCH(GenFunc):
                                 # print([j, k, l, vi])
                                 move = self.t2_unstring(d_set, j, k, l, vi)
                                 possible_moves[move_key] = {'frame' : move,
-                                                            'cost' : self.circuit_cost(move)}
+                                                            'cost' : self.time_cost(move)}
                                 move_key += 1
                             # if possible_moves == {}:
                             #     print([vi, j, k, l])
@@ -467,7 +467,7 @@ class SEARCH(GenFunc):
         for route in route_set:
             route_index = route_set.index(route)
             tau = route.copy()
-            zed_star = self.circuit_cost(route)
+            zed_star = self.time_cost(route)
             zed = 0
             t = 1
             n = len(route) - 1
@@ -540,7 +540,7 @@ class SEARCH(GenFunc):
         try:
             return possible_moves[min_pair[0]]['frame'], min_pair[1]
         except KeyError:
-            return edgeset, self.circuit_cost(edgeset)
+            return edgeset, self.time_cost(edgeset)
 
     def stream_header(self):
         print('|F1+|F2+| iter | end |  time  |   E/s   |   F1*   |   F2*   |val|   F1   |   F2   | m |    α    |    ß    | ΔMAX | S |')

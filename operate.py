@@ -4,7 +4,7 @@ import json
 import textwrap
 from info_work import make_dest, revise_working, get_working_map, set_info
 from maps_api import fetch_instantiate, fetch_new, new_data, instantiate_data, parse_addresses, set_depot
-from example_solve import solve, naive_addition
+from example_solve import solve#, naive_addition
 from visualizers import display_prompt
 
 parser = argparse.ArgumentParser(description='operate with the VRP toolset')

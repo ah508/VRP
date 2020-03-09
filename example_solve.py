@@ -16,6 +16,7 @@ from safekeeping import dist as d_key
 def solve(client):
     dist, dur, backmap, addresses = get_working_map(client)
     add_vec = []
+    fuel_vec = []
     xpoints = []
     ypoints = []
     for i in backmap:
@@ -23,21 +24,27 @@ def solve(client):
         with open(os.getcwd()+'\\clients\\'+client+'\\customer_info\\'+hold+'.json', 'r') as f:
             custinfo = json.load(f)
         add_vec.append(custinfo['proj_time'])
+        fuel_vec.append(custinfo['proj_fuel'])
         ypoints.append(custinfo['lat'])
         xpoints.append(custinfo['lon'])
     add_vec = np.array(add_vec)
     class Setup:
-        def __init__(self, dur, dist, cost, x, y):
-            self.c_matrix = dist
+        def __init__(self, dur, dist, tcost, dcost, x, y):
             self.d_matrix = dur
-            self.costvec = cost
+            self.c_matrix = np.divide(dist, default['fuel_econ'])
+            self.time_cost = tcost
+            self.fuel_cost = dcost
             for loc in range(0, len(self.d_matrix)):
                 for dest in range(0, len(self.d_matrix)):
                     if self.d_matrix[loc, dest] != 0:
-                        self.d_matrix[loc, dest] += self.costvec[dest]
+                        self.d_matrix[loc, dest] += self.time_cost[dest]
+            for loc in range(0, len(self.c_matrix)):
+                for dest in range(0, len(self.c_matrix)):
+                    if self.c_matrix[loc, dest] != 0:
+                        self.c_matrix[loc, dest] += self.fuel_cost[dest]
             self.xpoints = x
             self.ypoints = y
-    points = Setup(dur, dist, add_vec, xpoints, ypoints)
+    points = Setup(dur, dist, add_vec, fuel_vec, xpoints, ypoints)
     initials = int(math.sqrt(len(points.xpoints))//2)
     forray = []
     forray_costs = []
@@ -50,9 +57,9 @@ def solve(client):
     ideal = forray[forray_costs.index(min(forray_costs))]
     # settings = input('input settings: ')
     # set_val = getattr(route_settings, settings)
-    pathlist, pathdirectory = separate(ideal.edges.copy(), ideal.costs, default['time_const'], len(default['crew_params']))
+    pathlist, pathdirectory = separate(ideal.edges.copy(), ideal.duration, ideal.fuel_cost, default['time_const'], default['fuel_const'], len(default['crew_params']))
     # ideal.history.append(pathlist)
-    procedure = TABU(points, pathlist, pathdirectory, default['dist_const'], default['time_const'], len(default['crew_params']), len(points.xpoints))
+    procedure = TABU(points, pathlist, pathdirectory, default['fuel_const'], default['time_const'], len(default['crew_params']), len(points.xpoints))
     procedure.tabu_search()
     save = input('save this solution?[y/n]: ')
     if save.lower() in ['y', 'yes', 'ye', 'yeah']:
@@ -105,8 +112,8 @@ def grabinfo(solvedcase, p_set):
         d_cost = []
         for circuit in solvedcase.s_star:
             if set(circuit) != set([None]):
-                t_cost.append(solvedcase.circuit_cost(circuit))
-                d_cost.append(solvedcase.point_cost(circuit))
+                t_cost.append(solvedcase.time_cost(circuit))
+                d_cost.append(solvedcase.gas_cost(circuit))
             else:
                 t_cost.append(None)
                 d_cost.append(None)
@@ -115,21 +122,21 @@ def grabinfo(solvedcase, p_set):
             'sol' : solvedcase.s_star,
             'poly' : s_shape,
             'time' : t_cost,
-            'dist' : d_cost
+            'fuel' : d_cost
         }
     except AttributeError:
         feasible = {
             'sol' : None,
             'poly' : None,
             'time' : None,
-            'dist' : None
+            'fuel' : None
         }
     it_cost = []
     id_cost = []
     for circuit in solvedcase.sn_star:
         if set(circuit) != set([None]):
-            it_cost.append(solvedcase.circuit_cost(circuit))
-            id_cost.append(solvedcase.point_cost(circuit))
+            it_cost.append(solvedcase.time_cost(circuit))
+            id_cost.append(solvedcase.gas_cost(circuit))
         else:
             it_cost.append(None)
             id_cost.append(None)
@@ -138,7 +145,7 @@ def grabinfo(solvedcase, p_set):
         'sol' : solvedcase.sn_star,
         'poly' : sn_shape,
         'time' : it_cost,
-        'dist' : id_cost
+        'fuel' : id_cost
     }
     return feasible, infeasible
         
@@ -209,134 +216,134 @@ class npencode(json.JSONEncoder):
 
 ############################################################################################      
 
-def naive_addition(client):
-    print('WARNING')
-    print('this is NOT for quick estimations')
-    goodness = input('are you sure you would like to run this process?: ')
-    if goodness.lower() not in ['yes', 'y']:
-        print('bonk')
-        exit()
+# def naive_addition(client):
+#     print('WARNING')
+#     print('this is NOT for quick estimations')
+#     goodness = input('are you sure you would like to run this process?: ')
+#     if goodness.lower() not in ['yes', 'y']:
+#         print('bonk')
+#         exit()
 
-    addresses, omitted, working = parse_addresses(client)
+#     addresses, omitted, working = parse_addresses(client)
 
-    new_cust = input('input a new customer: ')
-    lat = input('input latitude: ')
-    lon = input('input longitude: ')
-    est = input('input a projected time: ') #later replace this with several different parameters and build from the model
+#     new_cust = input('input a new customer: ')
+#     lat = input('input latitude: ')
+#     lon = input('input longitude: ')
+#     est = input('input a projected time: ') #later replace this with several different parameters and build from the model
 
-    fetch_new(client, new_cust)
+#     fetch_new(client, new_cust)
     
-    path = os.getcwd() + '\\clients\\' + client
-    with open(path + '\\infodump_vert.json', 'r') as f:
-        vertical = json.load(f)
-    if vertical['destination_addresses'][0] != '':
-        with open(path + '\\infodump_horz.json', 'r') as f:
-            horizontal = json.load(f)
-        distance = parse_list(client, 'distance')
-        duration = parse_list(client, 'time')
-        addresses.append(vertical['destination_addresses'][0])
-        horz_list_dur = []
-        horz_list_dist = []
-        for dest in horizontal['rows'][0]['elements']:
-            horz_list_dur.append(dest['duration']['value'])
-            horz_list_dist.append(dest['distance']['value'])
-        horz_list_dist.append(0)
-        horz_list_dur.append(0)
-        for i in range(0, len(distance)):
-            distance[i].append(vertical['rows'][i]['elements'][0]['distance']['value'])
-            duration[i].append(vertical['rows'][i]['elements'][0]['duration']['value'])
-        distance.append(horz_list_dist)
-        duration.append(horz_list_dur)
+#     path = os.getcwd() + '\\clients\\' + client
+#     with open(path + '\\infodump_vert.json', 'r') as f:
+#         vertical = json.load(f)
+#     if vertical['destination_addresses'][0] != '':
+#         with open(path + '\\infodump_horz.json', 'r') as f:
+#             horizontal = json.load(f)
+#         distance = parse_list(client, 'distance')
+#         duration = parse_list(client, 'time')
+#         addresses.append(vertical['destination_addresses'][0])
+#         horz_list_dur = []
+#         horz_list_dist = []
+#         for dest in horizontal['rows'][0]['elements']:
+#             horz_list_dur.append(dest['duration']['value'])
+#             horz_list_dist.append(dest['distance']['value'])
+#         horz_list_dist.append(0)
+#         horz_list_dur.append(0)
+#         for i in range(0, len(distance)):
+#             distance[i].append(vertical['rows'][i]['elements'][0]['distance']['value'])
+#             duration[i].append(vertical['rows'][i]['elements'][0]['duration']['value'])
+#         distance.append(horz_list_dist)
+#         duration.append(horz_list_dur)
 
-        add_vec = []
-        xpoints = []
-        ypoints = []
-        for hold in addresses[:-1]:
-            with open(os.getcwd()+'\\clients\\'+client+'\\customer_info\\'+hold+'.json', 'r') as f:
-                custinfo = json.load(f)
-            add_vec.append(custinfo['proj_time'])
-            ypoints.append(custinfo['lat'])
-            xpoints.append(custinfo['lon'])
-        add_vec.append(float(est))
-        xpoints.append(float(lon))
-        ypoints.append(float(lat))
-        add_vec = np.array(add_vec)
-        dist = np.array(distance)
-        dur = np.array(duration)
+#         add_vec = []
+#         xpoints = []
+#         ypoints = []
+#         for hold in addresses[:-1]:
+#             with open(os.getcwd()+'\\clients\\'+client+'\\customer_info\\'+hold+'.json', 'r') as f:
+#                 custinfo = json.load(f)
+#             add_vec.append(custinfo['proj_time'])
+#             ypoints.append(custinfo['lat'])
+#             xpoints.append(custinfo['lon'])
+#         add_vec.append(float(est))
+#         xpoints.append(float(lon))
+#         ypoints.append(float(lat))
+#         add_vec = np.array(add_vec)
+#         dist = np.array(distance)
+#         dur = np.array(duration)
 
-        class Setup:
-            def __init__(self, dur, dist, cost, x, y):
-                self.c_matrix = dist
-                self.d_matrix = dur
-                self.costvec = cost
-                for loc in range(0, len(self.d_matrix)):
-                    for dest in range(0, len(self.d_matrix)):
-                        if self.d_matrix[loc, dest] != 0:
-                            self.d_matrix[loc, dest] += self.costvec[dest]
-                self.xpoints = x
-                self.ypoints = y
+#         class Setup:
+#             def __init__(self, dur, dist, cost, x, y):
+#                 self.c_matrix = dist
+#                 self.d_matrix = dur
+#                 self.costvec = cost
+#                 for loc in range(0, len(self.d_matrix)):
+#                     for dest in range(0, len(self.d_matrix)):
+#                         if self.d_matrix[loc, dest] != 0:
+#                             self.d_matrix[loc, dest] += self.costvec[dest]
+#                 self.xpoints = x
+#                 self.ypoints = y
         
-        points = Setup(dur, dist, add_vec, xpoints, ypoints)
-        initials = int(math.sqrt(len(points.xpoints))//2)
-        forray = []
-        forray_costs = []
-        for i in range(0, initials):
-            temp_sol = GENIUS(points)
-            temp_sol.cycle()
-            temp_sol.post_opt()
-            forray.append(temp_sol)
-            forray_costs.append(temp_sol.route_cost)
-        ideal = forray[forray_costs.index(min(forray_costs))]
-        t_constraint = input('please enter a (general) time constraint [in seconds]: ')
-        r_num = input('please enter a limit on the number of routes: ')
-        d_constraint = input('please enter a (general) distance constraint [in meters]: ')
-        pathlist, pathdirectory = separate(ideal.edges.copy(), ideal.costs, int(t_constraint), int(r_num))
-        # ideal.history.append(pathlist)
-        procedure = TABU(points, pathlist, pathdirectory, int(d_constraint), int(t_constraint), int(r_num), len(points.xpoints))
-        procedure.tabu_search()
-        save = input('save this solution?[y/n]: ')
-        if save.lower() in ['y', 'yes', 'ye', 'yeah']:
-            t = time.localtime()
-            timestamp = str(t.tm_mon) + '/' + str(t.tm_mday) + '/' + str(t.tm_year) + ' @ ' + str(t.tm_hour) + ':' + str(t.tm_min)
-            # history = parse_history(procedure.history, points)
-            feasible, infeasible = grabinfo(procedure, points)
-            selection_frequency = ['{:.3%}'.format(i) for i in procedure.select_freq]
-            solveinfo = {
-                'timestamp' : timestamp,
-                'address list' : addresses,
-                'map' : list(range(0, len(addresses))),
-                'best feasible' : feasible,
-                'best infeasible' : infeasible,
-                'selection freqs' : selection_frequency,
-                'duration matrix' : dur,
-                'distance matrix' : dist,
-                'projection vector' : add_vec,
-                # 'history' : history,
-                'solve parameters' : None
-            }
-            n1 = 0
-            savepath = os.getcwd()+'\\clients\\'+client+'\\route_info'
-            while n1 < 10:
-                name = input('give the solution a name: ')
-                if name in os.listdir(savepath):
-                    print('that file already exists.')
-                    overwrite = input('would you like to overwrite this file?[y/n]: ')
-                    if overwrite.lower() in ['yes', 'ye', 'yeah', 'y']:
-                        with open(savepath+'\\'+name+'.json', 'w') as f:
-                            json.dump(solveinfo, f, cls=npencode)
-                        print('saved.')
-                        break
-                    else:
-                        rename = input('rename this solution?[y/n]: ')
-                        if rename in ['n', 'no', 'nope', 'nay']:
-                            print('solution not saved.')
-                            break
-                else:
-                    with open(savepath+'\\'+name+'.json', 'w') as f:
-                        json.dump(solveinfo, f, cls=npencode)
-                    print('saved.')
-                    break
-        print(' ')
-    else:
-        print('failure to locate address')
+#         points = Setup(dur, dist, add_vec, xpoints, ypoints)
+#         initials = int(math.sqrt(len(points.xpoints))//2)
+#         forray = []
+#         forray_costs = []
+#         for i in range(0, initials):
+#             temp_sol = GENIUS(points)
+#             temp_sol.cycle()
+#             temp_sol.post_opt()
+#             forray.append(temp_sol)
+#             forray_costs.append(temp_sol.route_cost)
+#         ideal = forray[forray_costs.index(min(forray_costs))]
+#         t_constraint = input('please enter a (general) time constraint [in seconds]: ')
+#         r_num = input('please enter a limit on the number of routes: ')
+#         d_constraint = input('please enter a (general) distance constraint [in meters]: ')
+#         pathlist, pathdirectory = separate(ideal.edges.copy(), ideal.costs, int(t_constraint), int(r_num))
+#         # ideal.history.append(pathlist)
+#         procedure = TABU(points, pathlist, pathdirectory, int(d_constraint), int(t_constraint), int(r_num), len(points.xpoints))
+#         procedure.tabu_search()
+#         save = input('save this solution?[y/n]: ')
+#         if save.lower() in ['y', 'yes', 'ye', 'yeah']:
+#             t = time.localtime()
+#             timestamp = str(t.tm_mon) + '/' + str(t.tm_mday) + '/' + str(t.tm_year) + ' @ ' + str(t.tm_hour) + ':' + str(t.tm_min)
+#             # history = parse_history(procedure.history, points)
+#             feasible, infeasible = grabinfo(procedure, points)
+#             selection_frequency = ['{:.3%}'.format(i) for i in procedure.select_freq]
+#             solveinfo = {
+#                 'timestamp' : timestamp,
+#                 'address list' : addresses,
+#                 'map' : list(range(0, len(addresses))),
+#                 'best feasible' : feasible,
+#                 'best infeasible' : infeasible,
+#                 'selection freqs' : selection_frequency,
+#                 'duration matrix' : dur,
+#                 'distance matrix' : dist,
+#                 'projection vector' : add_vec,
+#                 # 'history' : history,
+#                 'solve parameters' : None
+#             }
+#             n1 = 0
+#             savepath = os.getcwd()+'\\clients\\'+client+'\\route_info'
+#             while n1 < 10:
+#                 name = input('give the solution a name: ')
+#                 if name in os.listdir(savepath):
+#                     print('that file already exists.')
+#                     overwrite = input('would you like to overwrite this file?[y/n]: ')
+#                     if overwrite.lower() in ['yes', 'ye', 'yeah', 'y']:
+#                         with open(savepath+'\\'+name+'.json', 'w') as f:
+#                             json.dump(solveinfo, f, cls=npencode)
+#                         print('saved.')
+#                         break
+#                     else:
+#                         rename = input('rename this solution?[y/n]: ')
+#                         if rename in ['n', 'no', 'nope', 'nay']:
+#                             print('solution not saved.')
+#                             break
+#                 else:
+#                     with open(savepath+'\\'+name+'.json', 'w') as f:
+#                         json.dump(solveinfo, f, cls=npencode)
+#                     print('saved.')
+#                     break
+#         print(' ')
+#     else:
+#         print('failure to locate address')
 

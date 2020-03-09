@@ -1,4 +1,5 @@
 default = {
+    'fuel_econ' : 6377.16, #meters per liter, subject to change
     'day_keys' : ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
     'crew_params' : [None, None, None, None, None],
     #     {0 : None},
@@ -7,7 +8,8 @@ default = {
     #     {0 : None},
     #     {0 : None}
     # ],
-    'dist_const' : [25000, 17000, 17000, 17000, 45000],
+    # 'fuel_const' : [60.567, 60.567, 60.567, 60.567, 60.567],
+    'fuel_const' : [7.567, 7.567, 7.567, 7.567, 7.567],
     #     {0 : 80467},
     #     {0 : 80467},
     #     {0 : 80467},

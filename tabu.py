@@ -68,7 +68,7 @@ class TABU(SEARCH):
         # self.history.append(self.route_list)
         route_costs = []
         for route in self.route_list:
-            route_costs.append(self.circuit_cost(route))
+            route_costs.append(self.time_cost(route))
         print(' ')
         print('Routes')
         print('------')
