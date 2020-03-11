@@ -54,12 +54,11 @@ def solve(client):
         temp_sol.post_opt()
         forray.append(temp_sol)
         forray_costs.append(temp_sol.route_cost)
+
+    cost_func = cost_def(default['cost_params']['labor'], default['cost_params']['fuel'])
     ideal = forray[forray_costs.index(min(forray_costs))]
-    # settings = input('input settings: ')
-    # set_val = getattr(route_settings, settings)
     pathlist, pathdirectory = separate(ideal.edges.copy(), ideal.duration, ideal.fuel_cost, default['time_const'], default['fuel_const'], len(default['crew_params']))
-    # ideal.history.append(pathlist)
-    procedure = TABU(points, pathlist, pathdirectory, default['fuel_const'], default['time_const'], len(default['crew_params']), len(points.xpoints))
+    procedure = TABU(points, pathlist, pathdirectory, default['fuel_const'], default['time_const'], len(default['crew_params']), len(points.xpoints), cost_func)
     procedure.tabu_search()
     save = input('save this solution?[y/n]: ')
     if save.lower() in ['y', 'yes', 'ye', 'yeah']:
@@ -212,6 +211,13 @@ class npencode(json.JSONEncoder):
         if isinstance(o, np.ndarray):
             return o.tolist()
         return json.JSONEncoder.default(self, o)
+
+def cost_def(labor, fuel):
+    def cost_func(time_vec, fuel_vec):
+        labor_cost = sum([labor[i]*time_vec[i] for i in range(0, len(labor)) if time_vec[i] != None])
+        fuel_cost = sum([fuel[i]*fuel_vec[i] for i in range(0, len(fuel)) if fuel_vec[i] != None])
+        return labor_cost + fuel_cost
+    return cost_func
 
 
 ############################################################################################      

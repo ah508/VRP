@@ -7,8 +7,9 @@ import heapq
 import time
 
 class SEARCH(GenFunc):
-    def __init__(self, points, routes, route_identifiers, max_cap, max_len, q, n_max): #history removed
+    def __init__(self, points, routes, route_identifiers, max_cap, max_len, q, n_max, cost_func): #history removed
         super().__init__(points)
+        self.c_func = cost_func
         self.time = time.process_time()
         self.gridlock = 0
         # self.history = history
@@ -262,8 +263,19 @@ class SEARCH(GenFunc):
         for route in routes:
             individ_time_cost.append(self.time_cost(route))
             individ_fuel_cap.append(self.gas_cost(route))
-        total_time = sum(individ_time_cost)
-        return total_time, individ_time_cost, individ_fuel_cap
+        # total_time = sum(individ_time_cost)
+        # return total_time, individ_time_cost, individ_fuel_cap
+
+        ####################################################################################################
+        ####################################################################################################
+        #
+        # DYNAMICALLY DEFINE AND PASS A FUNCTION INSTEAD OF HARDCODING PARAMETERS
+        #
+        ####################################################################################################
+        ####################################################################################################
+
+        total_cost = self.c_func(individ_time_cost, individ_fuel_cap)
+        return total_cost, individ_time_cost, individ_fuel_cap
 
     def sol_cost(self, routes, fetch=False):
         if fetch:
@@ -271,12 +283,12 @@ class SEARCH(GenFunc):
             d_check = set()
             c_check = set()
             for r_cost in range(0, len(cost_vector)):
-                if max(0, cost_vector[r_cost] - self.time_const[r_cost]) > 0: ################################
+                if max(0, cost_vector[r_cost] - self.time_const[r_cost]) > 0:
                     d_check.add(False)
                 else:
                     d_check.add(True)
             for c_cost in range(0, len(cap_vector)):
-                if max(0, cap_vector[c_cost] - self.cap_const[c_cost]) > 0: ####################################
+                if max(0, cap_vector[c_cost] - self.cap_const[c_cost]) > 0:
                     c_check.add(False)
                 else:
                     c_check.add(True)
@@ -288,9 +300,9 @@ class SEARCH(GenFunc):
         cap_over = 0
         time_over = 0
         for r_cost in range(0, len(cost_vector)):
-            time_over += max(0, cost_vector[r_cost] - self.time_const[r_cost]) #####################################
+            time_over += max(0, cost_vector[r_cost] - self.time_const[r_cost])
         for c_cost in range(0, len(cap_vector)):
-            cap_over += max(0, cap_vector[c_cost] - self.cap_const[c_cost]) ######################################
+            cap_over += max(0, cap_vector[c_cost] - self.cap_const[c_cost])
         time_over_tot = self.beta*time_over
         cap_over_tot = self.alpha*cap_over
         iv_cost = v_cost + cap_over_tot + time_over_tot
