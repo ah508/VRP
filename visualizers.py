@@ -3,20 +3,19 @@ import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib import animation
 from maps_api import parse_addresses
+from info_work import solution_grab
 import os
 import json
 import textwrap
 
 def display_prompt(client):
-    options = ['basic', 'history', 'solution', 'exit']
-    print(' ')
-    print('--------------------------------------')
-    for option in options:
-        print(option)
-    print('--------')
-    print(' ')
-    to_op = False
-    while not to_op:
+    while True:
+        print('-----------------------------------------------------------')
+        print('[basic]          - view the client customer set')
+        print('[history]        - [deprecated] view a solution history')
+        print('[solution]       - [soon to be deprecated] view a solution. has some hidden options')
+        print('[exit]           - return to the operations menu')
+        print(' ')
         selection = input('what would you like to display?: ')
         try:
             if selection.lower() in 'basic':
@@ -31,16 +30,14 @@ def display_prompt(client):
                 disp_fin(client, val='b')
             elif selection.lower() in 'exit':
                 print('returning to operation menu')
-                to_op = True
+                print(' ')
+                break
             else:
-                print('no valid option selected')
-                print('returning to operation menu')
-                to_op = True
+                print('that was not a valid option')
             print(' ')
         except (FileNotFoundError, AttributeError) as e:
             print('invalid input')
             print('returning to operation menu')
-            to_op = True
             print(' ')
 
 def get_submap(client):
@@ -90,11 +87,7 @@ def disp_addresses(client):
     plt.show()
 
 def disp_history(client):
-    hist_ref = input('which history would you like to view?: ')
-    # path = os.getcwd() + '\\clients\\' + client + '\\route_info\\solution_dumps\\' + hist_ref
-    path = os.getcwd() + '\\clients\\' + client + '\\route_info\\' + hist_ref
-    with open(path, 'r') as f:
-        sol_info = json.load(f)
+    sol_info = solution_grab(client)
     history = np.array(sol_info['history'])
     names, color, x, y = get_submap(client)
     
@@ -114,11 +107,7 @@ def disp_history(client):
     plt.show()
 
 def disp_fin(client, val='f'):
-    r_ref = input('which route would you like to view?: ')
-    # path = os.getcwd() + '\\clients\\' + client + '\\route_info\\solution_dumps\\' + r_ref
-    path = os.getcwd() + '\\clients\\' + client + '\\route_info\\' + r_ref
-    with open(path, 'r') as f:
-        sol_info = json.load(f)
+    sol_info = solution_grab(client)
 
     b_feas = False
     b_infeas = False

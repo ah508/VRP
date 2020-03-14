@@ -3,8 +3,97 @@ import json
 import os
 import re
 import textwrap
+import time
 from route_settings import default as def_settings
-from maps_api import parse_addresses, parse_array, parse_list
+from maps_api import parse_addresses, parse_array, parse_list, fetch_instantiate, fetch_new, instantiate_data, new_data, set_depot
+
+def modify_info(client):
+    while True:
+        print('-----------------------------------------------------------')
+        print('[newset]  - instantiate a new customer database')
+        print('[addset]  - add a customer to the existing database')
+        print('[depot]   - fix the depot')
+        print('[setinfo] - set necessary information for the customer list')
+        print('[work]    - revise the working customer list')
+        print('[exit]    - return to operations menu')
+        print(' ')
+        print('what operation would you like to perform?')
+        choice = input(': ')
+        choice = choice.lower()
+        if choice == 'newset':
+            destinations = make_dest()
+            input('please review the destination list one final time [press enter]')
+            for loc in destinations:
+                print(loc)
+            affirm = input('is this correct?[y/n]: ')
+            go = False
+            if affirm.lower() in ['y', 'ye', 'yes', 'yeah']:
+                affirm2 = input('proceed to fetch information?[y/n]: ')
+                if affirm2 in ['y', 'yes', 'ye', 'yeah']:
+                    go = True
+                    fetch_instantiate(client, destinations)
+                    instantiate_data(client, destinations)
+            if go:
+                print('results fetched')
+            else:
+                print('results not fetched')
+            print(' ')
+
+        elif choice == 'addset':
+            new_cust = input('input a new customer: ')
+            print(new_cust)
+            affirm = input('is this correct?[y/n]: ')
+            go = False
+            if affirm.lower() in ['y', 'ye', 'yes', 'yeah']:
+                affirm2 = input('proceed to fetch information?[y/n]: ')
+                if affirm2 in ['y', 'yes', 'ye', 'yeah']:
+                    go = True
+                    fetch_new(client, new_cust)
+                    new_data(client, new_cust)
+            if go:
+                print('results fetched')
+            else:
+                print('results not fetched')
+            print(' ')
+
+        elif choice == 'depot':
+            set_depot(client)
+            print(' ')
+
+        elif choice == 'setinfo':
+            set_info(client)
+            print(' ')
+        
+        elif choice == 'work':
+            addresses, omitted, working = revise_working(client)
+            go = False
+            affirm2 = input('proceed to modify working list?[y/n]: ')
+            if affirm2 in ['y', 'yes', 'ye', 'yeah']:
+                go = True
+                addr = {
+                    'addresses' : addresses,
+                    'duds' : omitted,
+                    'working' : working
+                }
+                with open(os.getcwd() + '\\clients\\' + client + '\\customers.json', 'w') as f:
+                    json.dump(addr, f)
+            if go:
+                print('working list modified')
+            else:
+                print('working list not modified')
+            print(' ')
+        
+        elif choice == 'exit':
+            print('returning to operations menu')
+            print(' ')
+            break
+            
+        else:
+            print('that was not a recognized option')
+            print(' ')
+            continue
+
+
 
 def make_dest():
     done = False
@@ -71,7 +160,7 @@ def revise_working(client):
                 if removal == 'all':
                     work = set([addresses[0]])
                 else:
-                    matcher = re.compile(removal)
+                    matcher = re.compile(removal, flags='i')
                     removal_list = []
                     for element in work:
                         if element == addresses[0]:
@@ -92,7 +181,7 @@ def revise_working(client):
                 if addition == 'all':
                     work = set(addresses)
                 else:
-                    matcher = re.compile(addition)
+                    matcher = re.compile(addition, flags='i')
                     addition_list = []
                     for element in addresses:
                         if matcher.search(element) != None:
@@ -231,8 +320,61 @@ def edit_info(path, name):
         json.dump(preview, cust)
     print(' ')
     print(' ')
-    
-def retrace(routes, backmap, addresses):
+
+def solution_grab(client):
+    r_ref = input('which solution would you like to trace?: ')
+    path = os.getcwd() + '\\clients\\' + client + '\\route_info\\solution_dumps\\' + r_ref
+    # path = os.getcwd() + '\\clients\\' + client + '\\route_info\\' + r_ref
+    with open(path, 'r') as f:
+        sol_info = json.load(f)
+    return sol_info
+
+def solve_pretrace(client):
+    sol_info = solution_grab(client)
+    print('would you like the feasible or infeasible solution?')
+    while True:
+        feas = input(': ')
+        feas = feas.lower()
+        if feas in ['feasible', 'infeasible']:
+            break
+        else:
+            print('that was not valid input')
+    p = 'best ' + feas
+    poly = sol_info[p]['poly']
+    timestamp = sol_info['timestamp']
+    f_cost = sol_info[p]['fuel']
+    t_cost = sol_info[p]['time']
+    trace_r, trace_n = solve_retrace(sol_info[p]['sol'], sol_info['map'], sol_info['address list'])
+    final_trace = {
+        'poly' : poly,
+        'timestamp' : timestamp,
+        'fuel' : f_cost,
+        'time' : t_cost,
+        'route_nums' : trace_r,
+        'route_names' : trace_n
+    }
+    print('traced!')
+    print(' ')
+    return final_trace
+
+def manual_pretrace(client):
+    trace_r, trace_n = manual_retrace(client)
+    t_cost, f_cost, poly = manual_cost_trace(client, trace_r)
+    t = time.localtime()
+    timestamp = str(t.tm_mon) + '/' + str(t.tm_mday) + '/' + str(t.tm_year) + ' @ ' + str(t.tm_hour) + ':' + str(t.tm_min)
+    final_trace = {
+        'poly' : poly,
+        'timestamp' : timestamp,
+        'fuel' : f_cost,
+        'time' : t_cost,
+        'route_nums' : trace_r,
+        'route_names' : trace_n
+    }
+    print('traced!')
+    print(' ')
+    return final_trace
+
+def solve_retrace(routes, backmap, addresses):
     rerouted = []
     renamed = []
     for i in range(0, len(routes)):
@@ -278,7 +420,7 @@ def locgrab(customers):
     while True:
         try:
             loc = input('input a location')
-            expr = re.compile(loc)
+            expr = re.compile(loc, flags='i')
             filtered = list(filter(expr.match, customers))
             if len(filtered) == 1:
                 truloc = filtered[0]
@@ -327,6 +469,44 @@ def manual_cost_trace(client, routes):
             poly = init_app
     return t_cost, f_cost, poly
 
+def retrace(client):
+    while True:
+        print('-----------------------------------------------------------')
+        print('[solution]     - trace from solution')
+        print('[manual]       - trace manually')
+        print('[exit]         - return to the operations menu')
+        print(' ')
+        print('select an option from above')
+        selection = input(': ')
+        selection = selection.lower()
+        if selection == 'solution':
+            trace = solve_pretrace(client)
+            save = input('would you like to save this trace?[y/n]: ')
+            if save.lower() in ['y', 'yes', 'yeah', 'ye']:
+                store_trace(client, trace)
+        
+        elif selection == 'manual':
+            trace = manual_pretrace(client)
+            save = input('would you like to save this trace?[y/n]: ')
+            if save.lower() in ['y', 'yes', 'yeah', 'ye']:
+                store_trace(client, trace)
+            
+        elif selection == 'exit':
+            print('returning to operations menu')
+            print(' ')
+            break
+
+        else:
+            print('that option was not recognized')
+        print(' ')
+
+def store_trace(client, trace):
+    path = os.getcwd() + '\\clients\\' + client + '\\route_info\\holding_routes\\'
+    name = input('name this trace: ')
+    with open(path+name, 'w') as f:
+        json.dump(trace, f)
+    print('saved!')
+    print(' ')
         
 class Setup:
     def __init__(self, dur, dist, tcost, dcost, x, y):

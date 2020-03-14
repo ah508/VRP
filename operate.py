@@ -2,8 +2,7 @@ import argparse
 import os
 import json
 import textwrap
-from info_work import make_dest, revise_working, get_working_map, set_info
-from maps_api import fetch_instantiate, fetch_new, new_data, instantiate_data, parse_addresses, set_depot
+from info_work import modify_info
 from example_solve import solve#, naive_addition
 from visualizers import display_prompt
 
@@ -12,21 +11,15 @@ parser = argparse.ArgumentParser(description='operate with the VRP toolset')
 cur_client = None
 print('enter "ops" at any time to see the list of options')
 
-escape = False
-while not escape:
+while True:
     print('Which operation would you like to perform?')
     choice = input(': ')
     choice = choice.lower()
     if choice == 'ops':
         print('[ops]     - see this list of options')
-        print('[nclient] - add a new client to the list')
-        print('[cclient] - change the current client')
-        print('[newset]  - instantiate a new customer database')
-        print('[addset]  - add a customer to the existing database')
-        print('[depot]   - fix the depot')
-        print('[setinfo] - set necessary information for the customer list')
+        print('[cclient] - change the current client, or add a new one')
+        print('[edit]    - change information regarding the current client')
         print('[weather] - forcibly update stored weather information')
-        print('[work]    - revise the working customer list')
         print('[visual]  - view visualizations, history, etc.')
         print('[solve]   - search for a solution')
         print('[manage]  - manage saved routes and route seeds')
@@ -34,93 +27,39 @@ while not escape:
         print(' ')
         continue
 
-    if cur_client == None and choice not in ['cclient', 'nclient', 'exit']:
+    if cur_client == None and choice not in ['cclient', 'exit']:
         print('please select a client before performing any operations')
         continue
-
-    if choice == 'nclient':
-        cname = input('input client name: ')
-        try:
-            os.mkdir(os.getcwd() + '\\clients\\' + cname)
-            os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\customer_info')
-            os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\weather_info')
-            os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\route_info')
-            os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\route_info' + '\\solution_dumps')
-            os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\route_info' + '\\routes')
-        except FileExistsError:
-            print('client already exists')
-            continue
         
-    elif choice == 'cclient':
+    if choice == 'cclient':
+        client_list = os.listdir(os.getcwd() + '\\clients')
         cur_client = input('input client to switch to: ')
+        if cur_client not in client_list:
+            print('that client does not exist')
+            new = input('would you like to instantiate this as a new client?[y/n]: ')
+            if new.lower() in ['ye', 'yeah', 'yes', 'y']:
+                cname = cur_client
+                os.mkdir(os.getcwd() + '\\clients\\' + cname)
+                os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\customer_info')
+                os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\weather_info')
+                os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\route_info')
+                os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\route_info' + '\\solution_dumps')
+                os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\route_info' + '\\routes')
+                os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\route_info' + '\\holding_routes')
         print(' ')
 
-    elif choice == 'newset':
-        destinations = make_dest()
-        input('please review the destination list one final time [press enter]')
-        for loc in destinations:
-            print(loc)
-        affirm = input('is this correct?[y/n]: ')
-        go = False
-        if affirm.lower() in ['y', 'ye', 'yes', 'yeah']:
-            affirm2 = input('proceed to fetch information?[y/n]: ')
-            if affirm2 in ['y', 'yes', 'ye', 'yeah']:
-                go = True
-                fetch_instantiate(cur_client, destinations)
-                instantiate_data(cur_client, destinations)
-        if go:
-            print('results fetched')
-        else:
-            print('results not fetched')
+    elif choice == 'edit':
+        modify_info(cur_client)
+        print('-----------------------------------------------------------')
         print(' ')
-
-    elif choice == 'addset':
-        new_cust = input('input a new customer: ')
-        print(new_cust)
-        affirm = input('is this correct?[y/n]: ')
-        go = False
-        if affirm.lower() in ['y', 'ye', 'yes', 'yeah']:
-            affirm2 = input('proceed to fetch information?[y/n]: ')
-            if affirm2 in ['y', 'yes', 'ye', 'yeah']:
-                go = True
-                fetch_new(cur_client, new_cust)
-                new_data(cur_client, new_cust)
-        if go:
-            print('results fetched')
-        else:
-            print('results not fetched')
-        print(' ')
-
-    elif choice == 'depot':
-        set_depot(cur_client)
-
-    elif choice == 'setinfo':
-        set_info(cur_client)
 
     elif choice == 'visual':
         display_prompt(cur_client)
+        print('-----------------------------------------------------------')
+        print(' ')
 
     elif choice == 'weather':
         pass
-
-    elif choice == 'work':
-        addresses, omitted, working = revise_working(cur_client)
-        go = False
-        affirm2 = input('proceed to modify working list?[y/n]: ')
-        if affirm2 in ['y', 'yes', 'ye', 'yeah']:
-            go = True
-            addr = {
-                'addresses' : addresses,
-                'duds' : omitted,
-                'working' : working
-            }
-            with open(os.getcwd() + '\\clients\\' + cur_client + '\\customers.json', 'w') as f:
-                json.dump(addr, f)
-        if go:
-            print('working list modified')
-        else:
-            print('working list not modified')
-        print(' ')
 
     elif choice == 'solve':
         solve(cur_client)
@@ -130,10 +69,11 @@ while not escape:
         pass
 
     elif choice == 'exit':
-        escape = True
+        break
 
     else:
         print('that was not a recognizable option')
+        print(' ')
         continue
 
     
