@@ -132,11 +132,35 @@ def disp_fin(client, val='f'):
     ax.set(xlim=(x[1], x[2]), ylim=(y[1], y[2]))
     for i, n in enumerate(names):
         ax.annotate(n, (x[0][i], y[0][i]), fontsize=5)
-    ax.scatter(x[0], y[0], c=color, alpha=0.7)
+    ax.scatter(x[0], y[0], c=color, alpha=0.7, label='locations')
+    shapelist = []
     if not isinstance(b_feas, bool):
-        shape1 = matplotlib.patches.Polygon(b_feas, closed=False, fill=False, color='g', alpha=.9)
+        shape1 = matplotlib.patches.Polygon(b_feas, closed=False, fill=False, color='g', alpha=.9, label='feasible')
         ax.add_patch(shape1)
+        shapelist.append(shape1)
     if not isinstance(b_infeas, bool):
-        shape2 = matplotlib.patches.Polygon(b_infeas, closed=False, fill=False, color='r', alpha=.3)
+        shape2 = matplotlib.patches.Polygon(b_infeas, closed=False, fill=False, color='r', alpha=.9, label='infeasible')
         ax.add_patch(shape2)
+        shapelist.append(shape2)
+    leg = ax.legend(loc='upper left', fancybox=True, shadow=True)
+    leg.get_frame().set_alpha(0.4)
+
+    shaped = {}
+    for legpatch, origpatch in zip(leg.get_patches(), shapelist):
+        legpatch.set_picker(5)
+        shaped[legpatch] = origpatch
+
+    def onpick(event):
+        legpatch = event.artist
+        origpatch = shaped[legpatch]
+        vis = not origpatch.get_visible()
+        origpatch.set_visible(vis)
+        if vis:
+            legpatch.set_alpha(1.0)
+        else:
+            legpatch.set_alpha(0.2)
+        fig.canvas.draw()
+
+    fig.canvas.mpl_connect('pick_event', onpick)
+
     plt.show()
