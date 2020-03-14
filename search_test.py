@@ -263,17 +263,6 @@ class SEARCH(GenFunc):
         for route in routes:
             individ_time_cost.append(self.time_cost(route))
             individ_fuel_cap.append(self.gas_cost(route))
-        # total_time = sum(individ_time_cost)
-        # return total_time, individ_time_cost, individ_fuel_cap
-
-        ####################################################################################################
-        ####################################################################################################
-        #
-        # DYNAMICALLY DEFINE AND PASS A FUNCTION INSTEAD OF HARDCODING PARAMETERS
-        #
-        ####################################################################################################
-        ####################################################################################################
-
         total_cost = self.c_func(individ_time_cost, individ_fuel_cap)
         return total_cost, individ_time_cost, individ_fuel_cap
 

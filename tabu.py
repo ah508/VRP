@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 from matplotlib import animation
 import numpy as np
 import time
+import math
 from genius import GENIUS
 from useful_funcs import PointGrab
 from search_test import SEARCH
@@ -15,6 +16,12 @@ class TABU(SEARCH):
         super().__init__(points, routes, route_identifiers, max_cap, max_len, q, n_max, cost_func) #history removed
         self.prev_iterations = 0
         self.prev_time = self.time
+        naught = self.sol_cost(routes)
+        if naught[2]:
+            self.feas_naught = naught[0]
+        else:
+            self.feas_naught = math.inf
+        self.infeas_naught = naught[1]
 
     def update_parameters(self, **kwargs):
         for name, value in kwargs.items():
@@ -93,11 +100,13 @@ class TABU(SEARCH):
         print('-------')
         print(f'{self.cur_iter - self.prev_iterations} iterations completed in {c_time - self.prev_time} seconds.')
         print(f'Best feasible          : {self.f1_star}')
+        print(f'Feasible improvement   : {round(((self.feas_naught/self.f1_star)-1), 3)*100}%')
         print(f'Best infeasible        : {self.f2_star}')
-        print(f'Current solution value : {self.sol_cost(self.route_list)[1]}')
+        print(f'Infeasible improvement : {round(((self.infeas_naught/self.f2_star)-1), 3)*100}%')
         print(f'Average E/s            : {(self.cur_iter-self.prev_iterations)/(c_time-self.prev_time)}')
         print(f'Overall Average E/s    : {self.cur_iter/c_time}')
-        print(f'Number of routes       : {self.m}')
+        # print(f'Current solution value : {self.sol_cost(self.route_list)[1]}')
+        # print(f'Number of routes       : {self.m}')
         print(f'ΔMAX                   : {self.delta_max}')
         print(f'Gridlock Restarts      : {self.gridlock}')
         print(' ')

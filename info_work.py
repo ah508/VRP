@@ -3,6 +3,7 @@ import json
 import os
 import re
 import textwrap
+from route_settings import default as def_settings
 from maps_api import parse_addresses, parse_array, parse_list
 
 def make_dest():
@@ -231,5 +232,116 @@ def edit_info(path, name):
     print(' ')
     print(' ')
     
+def retrace(routes, backmap, addresses):
+    rerouted = []
+    renamed = []
+    for i in range(0, len(routes)):
+        rerouted.append([])
+        renamed.append([])
+        retracer = 0
+        gotracer = routes[i][retracer]
+        while gotracer != 0:
+            rerouted[i].append(backmap[retracer])
+            renamed[i].append(addresses[backmap[retracer]])
+            retracer = gotracer
+            gotracer = routes[i][gotracer]
+        rerouted[i].append(0)
+        renamed[i].append(addresses[0])
+    return rerouted, renamed
 
+def manual_retrace(client):
+    customers, omissions, working = parse_addresses(client)
+    routes = []
+    names = []
+    print('customer list')
+    print('-------------')
+    for i in customers:
+        print(i)
+    print(' ')
+    nroute = int(input('input the number of routes: '))
+    for i in range(0, nroute):
+        spec_route = []
+        spec_names = []
+        while True:
+            location, location_index = locgrab(customers)
+            spec_route.append(location_index)
+            spec_names.append(location)
+            if len(spec_route) > 1 and location == spec_names[0]:
+                print(f'circuit {i} complete.')
+                print(' ')
+                break
+        routes.append(spec_route)
+        names.append(spec_names)
+    return routes, names
+
+def locgrab(customers):
+    while True:
+        try:
+            loc = input('input a location')
+            expr = re.compile(loc)
+            filtered = list(filter(expr.match, customers))
+            if len(filtered) == 1:
+                truloc = filtered[0]
+                truloc_index = customers.index(truloc)
+            else:
+                raise ValueError
+        except ValueError:
+            print('that input was not sufficient')
+            continue
+        break
+    return truloc, truloc_index
+
+def manual_cost_trace(client, routes):
+    distance = parse_array(client, 'distance')
+    duration = parse_array(client, 'time')
+    customers, omitted, working = parse_addresses(client)
+    add_vec = []
+    fuel_vec = []
+    xpoints = []
+    ypoints = []
+    for i in customers:
+        with open(os.getcwd()+'\\clients\\'+client+'\\customer_info\\'+i+'.json', 'r') as f:
+            custinfo = json.load(f)
+        add_vec.append(custinfo['proj_time'])
+        fuel_vec.append(custinfo['proj_fuel'])
+        ypoints.append(custinfo['lat'])
+        xpoints.append(custinfo['lon'])
+    add_vec = np.array(add_vec)
+    points = Setup(duration, distance, add_vec, fuel_vec, xpoints, ypoints)
+    t_cost = [0] * len(routes)
+    f_cost = [0] * len(routes)
+    poly = []
+    for i in range(0, len(routes)):
+        init_app = np.array([points.xpoints[routes[i][0]], points.ypoints[routes[i][0]]])
+        for j in range(0, len(routes[i])-1):
+            try:
+                t_cost[i] += points.d_matrix[routes[i][j]][routes[i][j+1]]
+                f_cost[i] += points.c_matrix[routes[i][j]][routes[i][j+1]]
+                xy_app = np.array([points.xpoints[routes[i][j+1]], points.ypoints[routes[i][j+1]]])
+            except IndexError:
+                input('somethin dun goofed')
+            init_app = np.vstack((init_app, xy_app))
+        try:
+            poly = np.vstack((poly, init_app))
+        except ValueError:
+            poly = init_app
+    return t_cost, f_cost, poly
+
+        
+class Setup:
+    def __init__(self, dur, dist, tcost, dcost, x, y):
+        self.d_matrix = dur
+        self.c_matrix = np.divide(dist, def_settings['fuel_econ'])
+        self.time_cost = tcost
+        self.fuel_cost = dcost
+        for loc in range(0, len(self.d_matrix)):
+            for dest in range(0, len(self.d_matrix)):
+                if self.d_matrix[loc, dest] != 0:
+                    self.d_matrix[loc, dest] += self.time_cost[dest]
+        for loc in range(0, len(self.c_matrix)):
+            for dest in range(0, len(self.c_matrix)):
+                if self.c_matrix[loc, dest] != 0:
+                    self.c_matrix[loc, dest] += self.fuel_cost[dest]
+        self.xpoints = x
+        self.ypoints = y
 

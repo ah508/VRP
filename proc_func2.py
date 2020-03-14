@@ -258,6 +258,4 @@ def separate(path, t_mat, f_mat, t_constraint, f_constraint, path_num):
         path_list[loop] = arbpath
     return path_list, path_directory
 
-# def get_dist(dist, v1, v2):
-#     return dist[v1, v2]
 
