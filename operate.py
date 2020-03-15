@@ -2,7 +2,7 @@ import argparse
 import os
 import json
 import textwrap
-from info_work import modify_info
+from info_work import modify_info, manage_routes
 from example_solve import solve#, naive_addition
 from visualizers import display_prompt
 
@@ -15,23 +15,23 @@ while True:
     print('Which operation would you like to perform?')
     choice = input(': ')
     choice = choice.lower()
-    if choice == 'ops':
-        print('[ops]     - see this list of options')
-        print('[cclient] - change the current client, or add a new one')
-        print('[edit]    - change information regarding the current client')
-        print('[weather] - forcibly update stored weather information')
-        print('[visual]  - view visualizations, history, etc.')
-        print('[solve]   - search for a solution')
-        print('[manage]  - manage saved routes and route seeds')
-        print('[exit]    - exit program')
+    if 'ops'.startswith(choice):
+        print('[o]ps     - see this list of options')
+        print('[cc]lient - change the current client, or add a new one')
+        print('[ed]it    - change information regarding the current client')
+        print('[w]eather - forcibly update stored weather information')
+        print('[v]isual  - view visualizations, history, etc.')
+        print('[s]olve   - search for a solution')
+        print('[m]anage  - view, manage, and compare saved routes and route seeds')
+        print('[e]xit    - exit program')
         print(' ')
         continue
 
-    if cur_client == None and choice not in ['cclient', 'exit']:
+    if cur_client == None and choice not in ['cclient', 'cc', 'exit']:
         print('please select a client before performing any operations')
         continue
         
-    if choice == 'cclient':
+    if 'cclient'.startswith(choice):
         client_list = os.listdir(os.getcwd() + '\\clients')
         cur_client = input('input client to switch to: ')
         if cur_client not in client_list:
@@ -48,28 +48,30 @@ while True:
                 os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\route_info' + '\\holding_routes')
         print(' ')
 
-    elif choice == 'edit':
+    elif 'exit'.startswith(choice):
+        break
+
+    elif 'edit'.startswith(choice):
         modify_info(cur_client)
         print('-----------------------------------------------------------')
         print(' ')
 
-    elif choice == 'visual':
+    elif 'visual'.startswith(choice):
         display_prompt(cur_client)
         print('-----------------------------------------------------------')
         print(' ')
 
-    elif choice == 'weather':
+    elif 'weather'.startswith(choice):
         pass
 
-    elif choice == 'solve':
+    elif 'solve'.startswith(choice):
         solve(cur_client)
         # naive_addition(cur_client)
 
-    elif choice == 'manage':
-        pass
-
-    elif choice == 'exit':
-        break
+    elif 'manage'.startswith(choice):
+        manage_routes(cur_client)
+        print('-----------------------------------------------------------')
+        print(' ')
 
     else:
         print('that was not a recognizable option')

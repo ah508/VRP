@@ -1,4 +1,5 @@
-from info_work import get_working_map, parse_addresses, parse_list, Setup
+from info_work import get_working_map
+from useful_funcs import parse_addresses, parse_list, Setup, npencode
 import googlemaps
 from maps_api import fetch_new
 import os
@@ -84,12 +85,12 @@ def solve(client):
         # savepath = os.getcwd()+'\\clients\\'+client+'\\route_info\\solution_dumps'
         savepath = os.getcwd()+'\\clients\\'+client+'\\route_info'
         while n1 < 10:
-            name = input('give the solution a name: ')
+            name = input('give the solution a name: ') + '.json'
             if name in os.listdir(savepath):
                 print('that file already exists.')
                 overwrite = input('would you like to overwrite this file?[y/n]: ')
                 if overwrite.lower() in ['yes', 'ye', 'yeah', 'y']:
-                    with open(savepath+'\\'+name+'.json', 'w') as f:
+                    with open(savepath+'\\'+name, 'w') as f:
                         json.dump(solveinfo, f, cls=npencode)
                     print('saved.')
                     break
@@ -99,7 +100,7 @@ def solve(client):
                         print('solution not saved.')
                         break
             else:
-                with open(savepath+'\\'+name+'.json', 'w') as f:
+                with open(savepath+'\\'+name, 'w') as f:
                     json.dump(solveinfo, f, cls=npencode)
                 print('saved.')
                 break
@@ -201,16 +202,6 @@ def parse_history(history, point_set):
                 xy = xy_app
         parsed_hist.append(xy)
     return parsed_hist
-    
-class npencode(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, np.int64):
-            return int(o)
-        if isinstance(o, np.int32):
-            return(int(o))
-        if isinstance(o, np.ndarray):
-            return o.tolist()
-        return json.JSONEncoder.default(self, o)
 
 def cost_def(labor, fuel):
     def cost_func(time_vec, fuel_vec):

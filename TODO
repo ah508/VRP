@@ -1,6 +1,5 @@
--1) cost optimization over time optimization.
-0) route management options.
-0a) manual route retracing.
+0) route management options. - workin' on it
+0a) manual route retracing. - workin' on it
 1) make a method for naive reoptimization for a single address insertion.
 2) add a means of reoptimizing from a pre-computed solution.
 3) clean everything up a bit.

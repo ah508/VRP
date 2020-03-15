@@ -2,8 +2,7 @@ import numpy as np
 import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib import animation
-from maps_api import parse_addresses
-from info_work import solution_grab
+from useful_funcs import route_grab, parse_addresses
 import os
 import json
 import textwrap
@@ -11,24 +10,23 @@ import textwrap
 def display_prompt(client):
     while True:
         print('-----------------------------------------------------------')
-        print('[basic]          - view the client customer set')
-        print('[history]        - [deprecated] view a solution history')
-        print('[solution]       - [soon to be deprecated] view a solution. has some hidden options')
-        print('[exit]           - return to the operations menu')
+        print('[b]asic          - view the client customer set')
+        print('[t]race          - view a trace')
+        print('[c]ompare        - compare traces or solutions')
+        print('[h]istory        - [deprecated] view a solution history')
+        print('[s]olution       - [soon to be deprecated] view a solution')
+        print('[e]xit           - return to the operations menu')
         print(' ')
-        selection = input('what would you like to display?: ')
+        choice = input('what would you like to display?: ')
+        choice = choice.lower()
         try:
-            if selection.lower() in 'basic':
+            if 'basic'.startswith(choice):
                 disp_addresses(client)
-            elif selection.lower() in 'history':
+            elif 'history'.startswith(choice):
                 disp_history(client)
-            elif selection.lower() in 'solution':
+            elif 'solution'.startswith(choice):
                 disp_fin(client)
-            elif selection.lower() in 'inf sol':
-                disp_fin(client, val='i')
-            elif selection.lower() in 'both sol':
-                disp_fin(client, val='b')
-            elif selection.lower() in 'exit':
+            elif 'exit'.startswith(choice):
                 print('returning to operation menu')
                 print(' ')
                 break
@@ -87,7 +85,7 @@ def disp_addresses(client):
     plt.show()
 
 def disp_history(client):
-    sol_info = solution_grab(client)
+    sol_info, sol_path = route_grab(client)
     history = np.array(sol_info['history'])
     names, color, x, y = get_submap(client)
     
@@ -106,15 +104,14 @@ def disp_history(client):
     animated = animation.FuncAnimation(fig, animate, frames=len(history), interval=50, repeat_delay=10000)
     plt.show()
 
-def disp_fin(client, val='f'):
-    sol_info = solution_grab(client)
+def disp_fin(client):
+    sol_info, sol_path = route_grab(client)
 
     b_feas = False
     b_infeas = False
-    if sol_info['best feasible']['poly'] != None and val in ['f', 'b']:
+    if sol_info['best feasible']['poly'] != None:
         b_feas = np.array(sol_info['best feasible']['poly'][0])
-    if val in ['i', 'b']:
-        b_infeas = np.array(sol_info['best infeasible']['poly'][0])
+    b_infeas = np.array(sol_info['best infeasible']['poly'][0])
     names, color, x, y = get_submap(client)
     
     fig, ax = plt.subplots()
@@ -132,6 +129,48 @@ def disp_fin(client, val='f'):
         ax.add_patch(shape2)
         shapelist.append(shape2)
     leg = ax.legend(loc='upper left', fancybox=True, shadow=True)
+    leg.get_frame().set_alpha(0.4)
+
+    shaped = {}
+    for legpatch, origpatch in zip(leg.get_patches(), shapelist):
+        legpatch.set_picker(5)
+        shaped[legpatch] = origpatch
+
+    def onpick(event):
+        legpatch = event.artist
+        origpatch = shaped[legpatch]
+        vis = not origpatch.get_visible()
+        origpatch.set_visible(vis)
+        if vis:
+            legpatch.set_alpha(1.0)
+        else:
+            legpatch.set_alpha(0.2)
+        fig.canvas.draw()
+
+    fig.canvas.mpl_connect('pick_event', onpick)
+
+    plt.show()
+
+def predisp_trace(client):
+    sol_info = route_grab(client, p_type='t')
+    sol = sol_info['poly'][0]
+    disp_trace(client, sol)
+
+def disp_trace(client, pre_loc):
+    sol = np.array(pre_loc)
+
+    names, color, x, y = get_submap(client)
+    
+    fig, ax = plt.subplots()
+    ax.set(xlim=(x[1], x[2]), ylim=(y[1], y[2]))
+    for i, n in enumerate(names):
+        ax.annotate(n, (x[0][i], y[0][i]), fontsize=5)
+    shapelist = []
+    ax.scatter(x[0], y[0], c=color, alpha=0.7, label='locations')
+    shape = matplotlib.patches.Polygon(sol, closed=False, fill=False, color='g', alpha=.9, label='feasible')
+    ax.add_patch(shape)
+    shapelist.append(shape)
+    leg = ax.legend(loc='best', fancybox=True, shadow=True)
     leg.get_frame().set_alpha(0.4)
 
     shaped = {}

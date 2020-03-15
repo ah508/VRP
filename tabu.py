@@ -6,7 +6,6 @@ import numpy as np
 import time
 import math
 from genius import GENIUS
-from useful_funcs import PointGrab
 from search_test import SEARCH
 import heapq
 

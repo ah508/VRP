@@ -3,6 +3,7 @@ from safekeeping import dist as key
 import os
 import json
 import numpy as np
+from useful_funcs import parse_array, parse_list, parse_addresses, getdump
 
 
 def full_instantiate(cur_client, customer_list):
@@ -124,27 +125,27 @@ def new_data(cur_client, customer):
     else:
         print('that address is a dud.')
 
-def parse_array(client, arraytype):
-    val = parse_list(client, arraytype)
-    return np.array(val, dtype=np.float64)
+# def parse_array(client, arraytype):
+#     val = parse_list(client, arraytype)
+#     return np.array(val, dtype=np.float64)
 
-def parse_list(client, listtype):
-    with open(os.getcwd() + '\\clients\\' + client + '\\' + listtype + '.json', 'r') as f:
-        val = json.load(f)
-    return val
+# def parse_list(client, listtype):
+#     with open(os.getcwd() + '\\clients\\' + client + '\\' + listtype + '.json', 'r') as f:
+#         val = json.load(f)
+#     return val
 
-def parse_addresses(client):
-    with open(os.getcwd() + '\\clients\\' + client + '\\customers.json', 'r') as f:
-        cust = json.load(f)
-    customers = cust['addresses']
-    omissions = cust['duds']
-    working = cust['working']
-    return customers, omissions, working
+# def parse_addresses(client):
+#     with open(os.getcwd() + '\\clients\\' + client + '\\customers.json', 'r') as f:
+#         cust = json.load(f)
+#     customers = cust['addresses']
+#     omissions = cust['duds']
+#     working = cust['working']
+#     return customers, omissions, working
 
-def getdump(path):
-    with open(path + '\\infodump.json') as f:
-        info = json.load(f)
-    return info
+# def getdump(path):
+#     with open(path + '\\infodump.json') as f:
+#         info = json.load(f)
+#     return info
 
 def set_depot(client):
     distance = parse_array(client, 'distance')

@@ -4,23 +4,25 @@ import os
 import re
 import textwrap
 import time
+from useful_funcs import route_grab, parse_addresses, parse_array, parse_list, Setup, npencode
+from visualizers import disp_trace
 from route_settings import default as def_settings
-from maps_api import parse_addresses, parse_array, parse_list, fetch_instantiate, fetch_new, instantiate_data, new_data, set_depot
+from maps_api import fetch_instantiate, fetch_new, instantiate_data, new_data, set_depot
 
 def modify_info(client):
     while True:
         print('-----------------------------------------------------------')
-        print('[newset]  - instantiate a new customer database')
-        print('[addset]  - add a customer to the existing database')
-        print('[depot]   - fix the depot')
-        print('[setinfo] - set necessary information for the customer list')
-        print('[work]    - revise the working customer list')
-        print('[exit]    - return to operations menu')
+        print('[n]ewset  - instantiate a new customer database')
+        print('[a]ddset  - add a customer to the existing database')
+        print('[d]epot   - fix the depot')
+        print('[s]etinfo - set necessary information for the customer list')
+        print('[w]ork    - revise the working customer list')
+        print('[e]xit    - return to operations menu')
         print(' ')
         print('what operation would you like to perform?')
         choice = input(': ')
         choice = choice.lower()
-        if choice == 'newset':
+        if 'newset'.startswith(choice):
             destinations = make_dest()
             input('please review the destination list one final time [press enter]')
             for loc in destinations:
@@ -37,9 +39,8 @@ def modify_info(client):
                 print('results fetched')
             else:
                 print('results not fetched')
-            print(' ')
 
-        elif choice == 'addset':
+        elif 'addset'.startswith(choice):
             new_cust = input('input a new customer: ')
             print(new_cust)
             affirm = input('is this correct?[y/n]: ')
@@ -54,17 +55,14 @@ def modify_info(client):
                 print('results fetched')
             else:
                 print('results not fetched')
-            print(' ')
 
-        elif choice == 'depot':
+        elif 'depot'.startswith(choice):
             set_depot(client)
-            print(' ')
 
-        elif choice == 'setinfo':
+        elif 'setinfo'.startswith(choice):
             set_info(client)
-            print(' ')
         
-        elif choice == 'work':
+        elif 'work'.startswith(choice):
             addresses, omitted, working = revise_working(client)
             go = False
             affirm2 = input('proceed to modify working list?[y/n]: ')
@@ -81,19 +79,48 @@ def modify_info(client):
                 print('working list modified')
             else:
                 print('working list not modified')
-            print(' ')
         
-        elif choice == 'exit':
+        elif 'exit'.startswith(choice):
             print('returning to operations menu')
             print(' ')
             break
             
         else:
             print('that was not a recognized option')
+        print(' ')
+
+def manage_routes(client):
+    while True:
+        print('-----------------------------------------------------------')
+        print('[s]et         - set an official route')
+        print('[t]race       - save a trace from a solution or from scratch')
+        print('[i]nfo        - view information from a trace')
+        print('[c]ompare     - compare two traces')
+        print('[e]xit        - return to the operations menu')
+        print(' ')
+        print('what would you like to manage?')
+        choice = input(': ')
+        choice = choice.lower()
+        if 'exit'.startswith(choice):
+            print('returning to operations menu')
             print(' ')
-            continue
+            break
+        
+        elif 'set'.startswith(choice):
+            print('not yet implemented')
 
+        elif 'trace'.startswith(choice):
+            retrace(client)
 
+        elif 'info'.startswith(choice):
+            trace_info(client)
+
+        elif 'compare'.startswith(choice):
+            pass
+
+        else:
+            print('that choice was not recognized')
+        print(' ')
 
 def make_dest():
     done = False
@@ -321,16 +348,25 @@ def edit_info(path, name):
     print(' ')
     print(' ')
 
-def solution_grab(client):
-    r_ref = input('which solution would you like to trace?: ')
-    path = os.getcwd() + '\\clients\\' + client + '\\route_info\\solution_dumps\\' + r_ref
-    # path = os.getcwd() + '\\clients\\' + client + '\\route_info\\' + r_ref
-    with open(path, 'r') as f:
-        sol_info = json.load(f)
-    return sol_info
+# def route_grab(client, p_type='s'):
+#     if p_type == 's':
+#         reference = 'solution_dumps'
+#     elif p_type == 't':
+#         reference = 'holding_routes'
+#     elif p_type == 'r':
+#         reference = 'routes'
+#     r_ref = input('which solution would you like to use?: ') + '.json'
+#     path = os.getcwd() + '\\clients\\' + client + '\\route_info\\' + reference + '\\' + r_ref
+#     # path = os.getcwd() + '\\clients\\' + client + '\\route_info\\' + r_ref
+#     with open(path, 'r') as f:
+#         sol_info = json.load(f)
+#     if p_type == 's':
+#         return sol_info, path
+#     else:
+#         return sol_info
 
 def solve_pretrace(client):
-    sol_info = solution_grab(client)
+    sol_info, sol_path = route_grab(client)
     print('would you like the feasible or infeasible solution?')
     while True:
         feas = input(': ')
@@ -346,8 +382,9 @@ def solve_pretrace(client):
     t_cost = sol_info[p]['time']
     trace_r, trace_n = solve_retrace(sol_info[p]['sol'], sol_info['map'], sol_info['address list'])
     final_trace = {
-        'poly' : poly,
         'timestamp' : timestamp,
+        'source' : sol_path,
+        'poly' : poly,
         'fuel' : f_cost,
         'time' : t_cost,
         'route_nums' : trace_r,
@@ -363,8 +400,9 @@ def manual_pretrace(client):
     t = time.localtime()
     timestamp = str(t.tm_mon) + '/' + str(t.tm_mday) + '/' + str(t.tm_year) + ' @ ' + str(t.tm_hour) + ':' + str(t.tm_min)
     final_trace = {
-        'poly' : poly,
         'timestamp' : timestamp,
+        'source' : 'manual',
+        'poly' : poly,
         'fuel' : f_cost,
         'time' : t_cost,
         'route_nums' : trace_r,
@@ -472,56 +510,123 @@ def manual_cost_trace(client, routes):
 def retrace(client):
     while True:
         print('-----------------------------------------------------------')
-        print('[solution]     - trace from solution')
-        print('[manual]       - trace manually')
-        print('[exit]         - return to the operations menu')
+        print('[s]olution     - trace from solution')
+        print('[m]anual       - trace manually')
+        print('[e]xit         - return to the operations menu')
         print(' ')
         print('select an option from above')
-        selection = input(': ')
-        selection = selection.lower()
-        if selection == 'solution':
+        choice = input(': ')
+        choice = choice.lower()
+        if 'solution'.startswith(choice):
             trace = solve_pretrace(client)
             save = input('would you like to save this trace?[y/n]: ')
             if save.lower() in ['y', 'yes', 'yeah', 'ye']:
                 store_trace(client, trace)
-        
-        elif selection == 'manual':
+        elif 'manual'.startswith(choice):
             trace = manual_pretrace(client)
             save = input('would you like to save this trace?[y/n]: ')
             if save.lower() in ['y', 'yes', 'yeah', 'ye']:
                 store_trace(client, trace)
-            
-        elif selection == 'exit':
+        elif 'exit'.startswith(choice):
             print('returning to operations menu')
             print(' ')
             break
-
         else:
             print('that option was not recognized')
         print(' ')
 
 def store_trace(client, trace):
     path = os.getcwd() + '\\clients\\' + client + '\\route_info\\holding_routes\\'
-    name = input('name this trace: ')
+    name = input('name this trace: ') + '.json'
     with open(path+name, 'w') as f:
         json.dump(trace, f)
     print('saved!')
     print(' ')
-        
-class Setup:
-    def __init__(self, dur, dist, tcost, dcost, x, y):
-        self.d_matrix = dur
-        self.c_matrix = np.divide(dist, def_settings['fuel_econ'])
-        self.time_cost = tcost
-        self.fuel_cost = dcost
-        for loc in range(0, len(self.d_matrix)):
-            for dest in range(0, len(self.d_matrix)):
-                if self.d_matrix[loc, dest] != 0:
-                    self.d_matrix[loc, dest] += self.time_cost[dest]
-        for loc in range(0, len(self.c_matrix)):
-            for dest in range(0, len(self.c_matrix)):
-                if self.c_matrix[loc, dest] != 0:
-                    self.c_matrix[loc, dest] += self.fuel_cost[dest]
-        self.xpoints = x
-        self.ypoints = y
+
+def trace_info(client):
+    path = os.getcwd() + '\\clients\\' + client + '\\route_info\\holding_routes\\'
+    trace = input('which trace?: ') + '.json'
+    with open(path+trace, 'r') as f:
+        info = json.load(f)
+    ts = info['timestamp']
+    sorce = info['source']
+    print(f'timestamp : {ts}')
+    print(f'source    : {sorce}')
+    print('-----------------------------------------------------------')
+    while True:
+        print('options')
+        print('-------')
+        print('[p]oly          - view the route polygon')
+        print('[f]uel          - view fuel costs (in liters)')
+        print('[t]ime          - view time costs (in seconds)')
+        print('[r]outes        - view the routes (sequential addresses)')
+        print('[e]xit          - exit this menu')
+        print(' ')
+        print('choose a value to view')
+        choice = input(': ')
+        choice = choice.lower()
+        if 'exit'.startswith(choice):
+            print('exiting menu')
+            print(' ')
+            break
+        elif 'fuel'.startswith(choice):
+            for i in range(0, len(info['fuel'])):
+                fuel = info['fuel'][i]
+                print(f'route {i}: {fuel} liters')
+            input(':')
+        elif 'time'.startswith(choice):
+            tim = info['time'][i]
+            for i in range(0, len(info['time'])):
+                print(f'route {i}: {tim} seconds')
+            input(':')
+        elif 'routes'.startswith(choice):
+            for i in range(0, len(info['route_names'])):
+                print(f'route {i}')
+                print('----------')
+                for j in info['route_names'][i]:
+                    print(j)
+                print(' ')
+            input(':')
+        elif 'polygon'.startswith(choice):
+            disp_trace(client, info['poly'])
+        print(' ')
+
+def trace_compare(client):
+    path = os.getcwd() + '\\clients\\' + client + '\\route_info\\holding_routes\\'
+    trace1 = input('input trace 1: ') + '.json'
+    trace2 = input('input trace 2: ') + '.json'
+    with open(path+trace1, 'r') as f:
+        first = json.load(f)
+    with open(path+trace2, 'r') as f:
+        second = json.load(f)
+    while True:
+        print('options')
+        print('-------')
+        print('[p]oly          - overlay polygons')
+        print('[f]uel          - compare fuel costs (in liters)')
+        print('[t]ime          - compare time costs (in seconds)')
+        print('[e]xit          - exit this menu')
+        print(' ')
+        print('choose a value to view')
+        choice = input(': ')
+        choice = choice.lower()
+        if 'exit'.startswith(choice):
+            print('exiting menu')
+            print(' ')
+            break
+        # elif 'fuel'.startswith(choice):
+        #     for i in range(0, len(info['fuel'])):
+        #         fuel = info['fuel'][i]
+        #         print(f'route {i}: {fuel} liters')
+        #     input(':')
+        # elif 'time'.startswith(choice):
+        #     tim = info['time'][i]
+        #     for i in range(0, len(info['time'])):
+        #         print(f'route {i}: {tim} seconds')
+        #     input(':')
+        # elif 'polygon'.startswith(choice):
+        #     disp_trace(client, info['poly'])
+        print(' ')
+
+
 
