@@ -5,6 +5,7 @@ from matplotlib import animation
 from useful_funcs import route_grab, parse_addresses
 import os
 import json
+import re
 import textwrap
 
 def display_prompt(client):
@@ -14,7 +15,7 @@ def display_prompt(client):
         print('[t]race          - view a trace')
         print('[c]ompare        - compare traces or solutions')
         print('[h]istory        - [deprecated] view a solution history')
-        print('[s]olution       - [soon to be deprecated] view a solution')
+        print('[s]olution       - [deprecated] view a solution')
         print('[e]xit           - return to the operations menu')
         print(' ')
         choice = input('what would you like to display?: ')
@@ -26,6 +27,10 @@ def display_prompt(client):
                 disp_history(client)
             elif 'solution'.startswith(choice):
                 disp_fin(client)
+            elif 'trace'.startswith(choice):
+                predisp_trace(client)
+            elif 'compare'.startswith(choice):
+                predisp_trace(client, m=True) #needs a wrapper to determine if sol or trace
             elif 'exit'.startswith(choice):
                 print('returning to operation menu')
                 print(' ')
@@ -33,7 +38,7 @@ def display_prompt(client):
             else:
                 print('that was not a valid option')
             print(' ')
-        except (FileNotFoundError, AttributeError) as e:
+        except (FileNotFoundError, AttributeError):
             print('invalid input')
             print('returning to operation menu')
             print(' ')
@@ -151,14 +156,40 @@ def disp_fin(client):
 
     plt.show()
 
-def predisp_trace(client):
-    sol_info = route_grab(client, p_type='t')
-    sol = sol_info['poly'][0]
-    disp_trace(client, sol)
+def predisp_trace(client, m=False):
+    if not m:
+        sol_info, name = route_grab(client, p_type='t')
+        sol = sol_info['poly']
+        disp_trace(client, [name], [sol])
+    else:
+        name = []
+        sol = []
+        pattern = re.compile('(?<=\\\)[a-zA-Z_0-9]*(?=\.json)') #this is the dumbest thing
+        while True:
+            stype = input('is this a [t]race or a [s]olution?: ')
+            if 'trace'.startswith(stype):
+                sol_info, lname = route_grab(client, p_type='t')
+                lname = '\\' + lname
+                sol.append(sol_info['poly'])
+            elif 'solution'.startswith(stype):
+                sol_info, lname = route_grab(client)
+                feas = input('[f]easible or [i]nfeasible?: ')
+                if 'feasible'.startswith(feas):
+                    sol.append(sol_info['best feasible']['poly'][0])
+                elif 'infeasible'.startswith(feas):
+                    sol.append(sol_info['best infeasible']['poly'][0])
+            nname = pattern.search(lname).group(0)
+            name.append(nname)
+            another = input('another?[y/n]: ')
+            if another.lower() not in ['y', 'yes', 'yeah', 'ye']:
+                break
+        disp_trace(client, name, sol)
 
-def disp_trace(client, pre_loc):
-    sol = np.array(pre_loc)
-
+def disp_trace(client, sol_name, pre_loc):
+    sol = {}
+    for i in range(0, len(sol_name)):
+        sol[sol_name[i]] = np.array(pre_loc[i])
+    
     names, color, x, y = get_submap(client)
     
     fig, ax = plt.subplots()
@@ -166,10 +197,17 @@ def disp_trace(client, pre_loc):
     for i, n in enumerate(names):
         ax.annotate(n, (x[0][i], y[0][i]), fontsize=5)
     shapelist = []
+    shaperef = {}
     ax.scatter(x[0], y[0], c=color, alpha=0.7, label='locations')
-    shape = matplotlib.patches.Polygon(sol, closed=False, fill=False, color='g', alpha=.9, label='feasible')
-    ax.add_patch(shape)
-    shapelist.append(shape)
+    val_col = ['k', 'b', 'm', 'c', 'r', 'g']
+    for k, v in sol.items():
+        shaperef[k] = matplotlib.patches.Polygon(v, closed=False, fill=False, alpha=.9, label=k)
+        try:
+            shaperef[k].set_color(val_col.pop(-1))
+        except IndexError:
+            pass
+        ax.add_patch(shaperef[k])
+        shapelist.append(shaperef[k])
     leg = ax.legend(loc='best', fancybox=True, shadow=True)
     leg.get_frame().set_alpha(0.4)
 

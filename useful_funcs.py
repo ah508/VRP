@@ -33,11 +33,13 @@ class npencode(json.JSONEncoder):
 def route_grab(client, p_type='s'):
     if p_type == 's':
         reference = 'solution_dumps'
+        r_ref = input('which solution would you like to use?: ') + '.json'
     elif p_type == 't':
         reference = 'holding_routes'
+        r_ref = input('which trace would you like to use?: ') + '.json'
     elif p_type == 'r':
         reference = 'routes'
-    r_ref = input('which solution would you like to use?: ') + '.json'
+        r_ref = input('which route would you like to use?: ') + '.json'
     path = os.getcwd() + '\\clients\\' + client + '\\route_info\\' + reference + '\\' + r_ref
     # path = os.getcwd() + '\\clients\\' + client + '\\route_info\\' + r_ref
     with open(path, 'r') as f:
@@ -45,7 +47,7 @@ def route_grab(client, p_type='s'):
     if p_type == 's':
         return sol_info, path
     else:
-        return sol_info
+        return sol_info, r_ref
 
 def parse_array(client, arraytype):
     val = parse_list(client, arraytype)
@@ -68,3 +70,7 @@ def getdump(path):
     with open(path + '\\infodump.json') as f:
         info = json.load(f)
     return info
+
+def nonesum(iterable):
+    val = sum([x for x in iterable if x != None])
+    return val

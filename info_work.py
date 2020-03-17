@@ -4,7 +4,7 @@ import os
 import re
 import textwrap
 import time
-from useful_funcs import route_grab, parse_addresses, parse_array, parse_list, Setup, npencode
+from useful_funcs import route_grab, parse_addresses, parse_array, parse_list, Setup, npencode, nonesum
 from visualizers import disp_trace
 from route_settings import default as def_settings
 from maps_api import fetch_instantiate, fetch_new, instantiate_data, new_data, set_depot
@@ -116,7 +116,7 @@ def manage_routes(client):
             trace_info(client)
 
         elif 'compare'.startswith(choice):
-            pass
+            trace_compare(client)
 
         else:
             print('that choice was not recognized')
@@ -348,23 +348,6 @@ def edit_info(path, name):
     print(' ')
     print(' ')
 
-# def route_grab(client, p_type='s'):
-#     if p_type == 's':
-#         reference = 'solution_dumps'
-#     elif p_type == 't':
-#         reference = 'holding_routes'
-#     elif p_type == 'r':
-#         reference = 'routes'
-#     r_ref = input('which solution would you like to use?: ') + '.json'
-#     path = os.getcwd() + '\\clients\\' + client + '\\route_info\\' + reference + '\\' + r_ref
-#     # path = os.getcwd() + '\\clients\\' + client + '\\route_info\\' + r_ref
-#     with open(path, 'r') as f:
-#         sol_info = json.load(f)
-#     if p_type == 's':
-#         return sol_info, path
-#     else:
-#         return sol_info
-
 def solve_pretrace(client):
     sol_info, sol_path = route_grab(client)
     print('would you like the feasible or infeasible solution?')
@@ -376,7 +359,7 @@ def solve_pretrace(client):
         else:
             print('that was not valid input')
     p = 'best ' + feas
-    poly = sol_info[p]['poly']
+    poly = sol_info[p]['poly'][0]
     timestamp = sol_info['timestamp']
     f_cost = sol_info[p]['fuel']
     t_cost = sol_info[p]['time']
@@ -418,6 +401,8 @@ def solve_retrace(routes, backmap, addresses):
     for i in range(0, len(routes)):
         rerouted.append([])
         renamed.append([])
+        if routes[i][0] == None:
+            continue
         retracer = 0
         gotracer = routes[i][retracer]
         while gotracer != 0:
@@ -545,7 +530,8 @@ def store_trace(client, trace):
 
 def trace_info(client):
     path = os.getcwd() + '\\clients\\' + client + '\\route_info\\holding_routes\\'
-    trace = input('which trace?: ') + '.json'
+    race = input('which trace?: ')
+    trace = race + '.json'
     with open(path+trace, 'r') as f:
         info = json.load(f)
     ts = info['timestamp']
@@ -572,29 +558,39 @@ def trace_info(client):
         elif 'fuel'.startswith(choice):
             for i in range(0, len(info['fuel'])):
                 fuel = info['fuel'][i]
-                print(f'route {i}: {fuel} liters')
+                if fuel != None:
+                    print(f'route {i}: {fuel} liters')
             input(':')
         elif 'time'.startswith(choice):
-            tim = info['time'][i]
             for i in range(0, len(info['time'])):
-                print(f'route {i}: {tim} seconds')
+                tim = info['time'][i]
+                if tim != None:
+                    print(f'route {i}: {tim} seconds')
             input(':')
         elif 'routes'.startswith(choice):
             for i in range(0, len(info['route_names'])):
-                print(f'route {i}')
-                print('----------')
-                for j in info['route_names'][i]:
-                    print(j)
-                print(' ')
+                if info['route_names'][i] != []:
+                    print(f'route {i}')
+                    print('----------')
+                    for j in info['route_names'][i]:
+                        print(j)
+                    print(' ')
             input(':')
         elif 'polygon'.startswith(choice):
-            disp_trace(client, info['poly'])
+            
+            disp_trace(client, [race], [info['poly']])
         print(' ')
 
+
+
+############################################################################################
+#we got errors
 def trace_compare(client):
     path = os.getcwd() + '\\clients\\' + client + '\\route_info\\holding_routes\\'
-    trace1 = input('input trace 1: ') + '.json'
-    trace2 = input('input trace 2: ') + '.json'
+    race1 = input('input trace 1: ')
+    race2 = input('input trace 2: ')
+    trace1 = race1 + '.json'
+    trace2 = race2 + '.json'
     with open(path+trace1, 'r') as f:
         first = json.load(f)
     with open(path+trace2, 'r') as f:
@@ -605,6 +601,7 @@ def trace_compare(client):
         print('[p]oly          - overlay polygons')
         print('[f]uel          - compare fuel costs (in liters)')
         print('[t]ime          - compare time costs (in seconds)')
+        print('[c]ost          - compare total projected costs')
         print('[e]xit          - exit this menu')
         print(' ')
         print('choose a value to view')
@@ -614,19 +611,40 @@ def trace_compare(client):
             print('exiting menu')
             print(' ')
             break
-        # elif 'fuel'.startswith(choice):
-        #     for i in range(0, len(info['fuel'])):
-        #         fuel = info['fuel'][i]
-        #         print(f'route {i}: {fuel} liters')
-        #     input(':')
-        # elif 'time'.startswith(choice):
-        #     tim = info['time'][i]
-        #     for i in range(0, len(info['time'])):
-        #         print(f'route {i}: {tim} seconds')
-        #     input(':')
-        # elif 'polygon'.startswith(choice):
-        #     disp_trace(client, info['poly'])
+        elif 'fuel'.startswith(choice):
+            ordered1 = sorted(first['fuel'], key=lambda x: (x is None, x))
+            ordered2 = sorted(second['fuel'], key=lambda x: (x is None, x))
+            comp_print(ordered1, ordered2)
+        elif 'time'.startswith(choice):
+            ordered1 = sorted(first['time'], key=lambda x: (x is None, x))
+            ordered2 = sorted(second['time'], key=lambda x: (x is None, x))
+            comp_print(ordered1, ordered2)
+        elif 'cost'.startswith(choice):
+            print('not implemented')
+        elif 'polygon'.startswith(choice):
+            disp_trace(client, [race1, race2], [first['poly'], second['poly']])
+        else:
+            print('invalid selection')
         print(' ')
 
-
+def comp_print(el_1, el_2):
+    size = max(len(el_1), len(el_2))
+    print('in independent ascending order:')
+    print(r'route# | trace 1 cost | trace 2 cost |  abs.  diff  | % diff ')
+    print('---------------------------------------------------------------')
+    for i in range(0, size):
+        if el_1[i] != None and el_2[i] != None:
+            out = '{:<7}|{:>14f}|{:>14f}|{:>14f}|{:>7f}%'.format(i, el_1[i], el_2[i], abs(el_1[i] - el_2[i]), 100*(1 - el_1[i]/el_2[i]))
+        elif el_1[i] != None:
+            out = '{:<7}|{:>14f}|{:>14}|{:>14}|{:>9}'.format(i, el_1[i], 'NA', 'NA', 'NA')
+        elif el_2[i] != None:
+            out = '{:<7}|{:>14}|{:>14f}|{:>14}|{:>9}'.format(i, 'NA', el_2[i], 'NA', 'NA')
+        else:
+            continue
+        print(out)
+    print('_______________________________________________________________')
+    out = 'totals |{:>14f}|{:>14f}|{:>14f}|{:>7f}%'.format(nonesum(el_1), nonesum(el_2), abs(nonesum(el_1) - nonesum(el_2)), 100*(1 - nonesum(el_1)/nonesum(el_2)))
+    print(out)
+    print('---------------------------------------------------------------')
+    input(':')
 
