@@ -187,7 +187,7 @@ def revise_working(client):
                 if removal == 'all':
                     work = set([addresses[0]])
                 else:
-                    matcher = re.compile(removal, flags='i')
+                    matcher = re.compile(removal, flags=re.I)
                     removal_list = []
                     for element in work:
                         if element == addresses[0]:
@@ -208,7 +208,7 @@ def revise_working(client):
                 if addition == 'all':
                     work = set(addresses)
                 else:
-                    matcher = re.compile(addition, flags='i')
+                    matcher = re.compile(addition, flags=re.I)
                     addition_list = []
                     for element in addresses:
                         if matcher.search(element) != None:
@@ -442,9 +442,9 @@ def manual_retrace(client):
 def locgrab(customers):
     while True:
         try:
-            loc = input('input a location')
-            expr = re.compile(loc, flags='i')
-            filtered = list(filter(expr.match, customers))
+            loc = input('input a location: ')
+            expr = re.compile(loc, flags=re.I)
+            filtered = list(filter(expr.search, customers))
             if len(filtered) == 1:
                 truloc = filtered[0]
                 truloc_index = customers.index(truloc)
@@ -486,6 +486,7 @@ def manual_cost_trace(client, routes):
             except IndexError:
                 input('somethin dun goofed')
             init_app = np.vstack((init_app, xy_app))
+            init_app = np.vstack((init_app, xy_app)) # I have no idea why I have to do this
         try:
             poly = np.vstack((poly, init_app))
         except ValueError:
@@ -524,7 +525,7 @@ def store_trace(client, trace):
     path = os.getcwd() + '\\clients\\' + client + '\\route_info\\holding_routes\\'
     name = input('name this trace: ') + '.json'
     with open(path+name, 'w') as f:
-        json.dump(trace, f)
+        json.dump(trace, f, cls=npencode)
     print('saved!')
     print(' ')
 
@@ -577,14 +578,9 @@ def trace_info(client):
                     print(' ')
             input(':')
         elif 'polygon'.startswith(choice):
-            
             disp_trace(client, [race], [info['poly']])
         print(' ')
 
-
-
-############################################################################################
-#we got errors
 def trace_compare(client):
     path = os.getcwd() + '\\clients\\' + client + '\\route_info\\holding_routes\\'
     race1 = input('input trace 1: ')
@@ -633,17 +629,19 @@ def comp_print(el_1, el_2):
     print(r'route# | trace 1 cost | trace 2 cost |  abs.  diff  | % diff ')
     print('---------------------------------------------------------------')
     for i in range(0, size):
-        if el_1[i] != None and el_2[i] != None:
-            out = '{:<7}|{:>14f}|{:>14f}|{:>14f}|{:>7f}%'.format(i, el_1[i], el_2[i], abs(el_1[i] - el_2[i]), 100*(1 - el_1[i]/el_2[i]))
-        elif el_1[i] != None:
-            out = '{:<7}|{:>14f}|{:>14}|{:>14}|{:>9}'.format(i, el_1[i], 'NA', 'NA', 'NA')
-        elif el_2[i] != None:
-            out = '{:<7}|{:>14}|{:>14f}|{:>14}|{:>9}'.format(i, 'NA', el_2[i], 'NA', 'NA')
-        else:
-            continue
+        try:
+            out = '{:<7}|{:>14.5f}|{:>14.5f}|{:> 14.5f}|{:> 9.4f}%'.format(i, el_1[i], el_2[i], abs(el_1[i] - el_2[i]), 100*(1 - el_1[i]/el_2[i]))
+        except (IndexError, TypeError):
+            try:
+                out = '{:<7}|{:>14.5f}|{:>14}|{:>14}|{:>10}'.format(i, el_1[i], 'NA', 'NA', 'NA')
+            except(IndexError, TypeError):
+                try:
+                    out = '{:<7}|{:>14}|{:>14.5f}|{:>14}|{:>10}'.format(i, 'NA', el_2[i], 'NA', 'NA')
+                except(IndexError, TypeError):
+                    continue
         print(out)
     print('_______________________________________________________________')
-    out = 'totals |{:>14f}|{:>14f}|{:>14f}|{:>7f}%'.format(nonesum(el_1), nonesum(el_2), abs(nonesum(el_1) - nonesum(el_2)), 100*(1 - nonesum(el_1)/nonesum(el_2)))
+    out = 'totals |{:>14f}|{:>14f}|{:> 14.5f}|{:> 9.4f}%'.format(nonesum(el_1), nonesum(el_2), abs(nonesum(el_1) - nonesum(el_2)), 100*(1 - nonesum(el_1)/nonesum(el_2)))
     print(out)
     print('---------------------------------------------------------------')
     input(':')
