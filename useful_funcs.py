@@ -1,12 +1,11 @@
 import numpy as np
 import json
 import os
-from route_settings import default as def_settings
 
 class Setup:
-    def __init__(self, dur, dist, tcost, dcost, x, y):
+    def __init__(self, dur, dist, tcost, dcost, x, y, settings):
         self.d_matrix = dur
-        self.c_matrix = np.divide(dist, def_settings['fuel_econ'])
+        self.c_matrix = np.divide(dist, settings['fuel_econ'])
         self.time_cost = tcost
         self.fuel_cost = dcost
         for loc in range(0, len(self.d_matrix)):
@@ -74,3 +73,10 @@ def getdump(path):
 def nonesum(iterable):
     val = sum([x for x in iterable if x != None])
     return val
+
+def get_settings(client):
+    sett = input('which settings would you like to use?: ')
+    path = os.getcwd() + '\\clients\\' + client + '\\route_info\\route_settings\\' + sett + '.json'
+    with open(path, 'r') as f:
+        settings = json.load(f)
+    return settings

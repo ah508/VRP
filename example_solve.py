@@ -1,5 +1,5 @@
 from info_work import get_working_map
-from useful_funcs import parse_addresses, parse_list, Setup, npencode
+from useful_funcs import parse_addresses, parse_list, Setup, npencode, get_settings
 import googlemaps
 from maps_api import fetch_new
 import os
@@ -7,7 +7,6 @@ import json
 import math
 import time
 from genius import GENIUS
-from route_settings import default
 import numpy as np
 from tabu import TABU
 from proc_func2 import separate
@@ -29,23 +28,8 @@ def solve(client):
         ypoints.append(custinfo['lat'])
         xpoints.append(custinfo['lon'])
     add_vec = np.array(add_vec)
-    # class Setup:
-    #     def __init__(self, dur, dist, tcost, dcost, x, y):
-    #         self.d_matrix = dur
-    #         self.c_matrix = np.divide(dist, default['fuel_econ'])
-    #         self.time_cost = tcost
-    #         self.fuel_cost = dcost
-    #         for loc in range(0, len(self.d_matrix)):
-    #             for dest in range(0, len(self.d_matrix)):
-    #                 if self.d_matrix[loc, dest] != 0:
-    #                     self.d_matrix[loc, dest] += self.time_cost[dest]
-    #         for loc in range(0, len(self.c_matrix)):
-    #             for dest in range(0, len(self.c_matrix)):
-    #                 if self.c_matrix[loc, dest] != 0:
-    #                     self.c_matrix[loc, dest] += self.fuel_cost[dest]
-    #         self.xpoints = x
-    #         self.ypoints = y
-    points = Setup(dur, dist, add_vec, fuel_vec, xpoints, ypoints)
+    default = get_settings(client)
+    points = Setup(dur, dist, add_vec, fuel_vec, xpoints, ypoints, default)
     initials = int(math.sqrt(len(points.xpoints))//2)
     forray = []
     forray_costs = []

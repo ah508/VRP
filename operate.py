@@ -46,6 +46,7 @@ while True:
                 os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\route_info' + '\\solution_dumps')
                 os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\route_info' + '\\routes')
                 os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\route_info' + '\\holding_routes')
+                os.mkdir(os.getcwd() + '\\clients\\' + cname + '\\route_info' + '\\route_settings')
         print(' ')
 
     elif 'exit'.startswith(choice):
