@@ -4,7 +4,7 @@ import os
 import re
 import textwrap
 import time
-from useful_funcs import route_grab, parse_addresses, parse_array, parse_list, Setup, npencode, nonesum
+from useful_funcs import route_grab, parse_addresses, parse_array, parse_list, Setup, npencode, nonesum, get_settings, indep_cost_def
 from visualizers import disp_trace
 from route_settings import default as def_settings
 from maps_api import fetch_instantiate, fetch_new, instantiate_data, new_data, set_depot
@@ -367,6 +367,7 @@ def solve_pretrace(client):
     final_trace = {
         'timestamp' : timestamp,
         'source' : sol_path,
+        'settings_used' : sol_info['solve parameters']['settings'],
         'poly' : poly,
         'fuel' : f_cost,
         'time' : t_cost,
@@ -379,11 +380,12 @@ def solve_pretrace(client):
 
 def manual_pretrace(client):
     trace_r, trace_n = manual_retrace(client)
-    t_cost, f_cost, poly = manual_cost_trace(client, trace_r)
+    t_cost, f_cost, poly, set_name = manual_cost_trace(client, trace_r)
     t = time.localtime()
     timestamp = str(t.tm_mon) + '/' + str(t.tm_mday) + '/' + str(t.tm_year) + ' @ ' + str(t.tm_hour) + ':' + str(t.tm_min)
     final_trace = {
         'timestamp' : timestamp,
+        'settings_used' : set_name,
         'source' : 'manual',
         'poly' : poly,
         'fuel' : f_cost,
@@ -429,12 +431,18 @@ def manual_retrace(client):
         spec_names = []
         while True:
             location, location_index = locgrab(customers)
-            spec_route.append(location_index)
-            spec_names.append(location)
-            if len(spec_route) > 1 and location == spec_names[0]:
-                print(f'circuit {i} complete.')
-                print(' ')
+            if location == None and spec_route == []:
+                print('circuit added as empty route')
                 break
+            elif location == None and spec_route != []:
+                raise ValueError('an empty location does not exist')
+            else:
+                spec_route.append(location_index)
+                spec_names.append(location)
+                if len(spec_route) > 1 and location == spec_names[0]:
+                    print(f'circuit {i} complete.')
+                    print(' ')
+                    break
         routes.append(spec_route)
         names.append(spec_names)
     return routes, names
@@ -448,6 +456,9 @@ def locgrab(customers):
             if len(filtered) == 1:
                 truloc = filtered[0]
                 truloc_index = customers.index(truloc)
+            elif len(filtered) == 0 and loc == '':
+                truloc = None
+                truloc_index = None
             else:
                 raise ValueError
         except ValueError:
@@ -460,6 +471,7 @@ def manual_cost_trace(client, routes):
     distance = parse_array(client, 'distance')
     duration = parse_array(client, 'time')
     customers, omitted, working = parse_addresses(client)
+    settings, name = get_settings(client)
     add_vec = []
     fuel_vec = []
     xpoints = []
@@ -472,7 +484,7 @@ def manual_cost_trace(client, routes):
         ypoints.append(custinfo['lat'])
         xpoints.append(custinfo['lon'])
     add_vec = np.array(add_vec)
-    points = Setup(duration, distance, add_vec, fuel_vec, xpoints, ypoints)
+    points = Setup(duration, distance, add_vec, fuel_vec, xpoints, ypoints, settings)
     t_cost = [0] * len(routes)
     f_cost = [0] * len(routes)
     poly = []
@@ -491,7 +503,7 @@ def manual_cost_trace(client, routes):
             poly = np.vstack((poly, init_app))
         except ValueError:
             poly = init_app
-    return t_cost, f_cost, poly
+    return t_cost, f_cost, poly, name
 
 def retrace(client):
     while True:
@@ -546,6 +558,7 @@ def trace_info(client):
         print('[p]oly          - view the route polygon')
         print('[f]uel          - view fuel costs (in liters)')
         print('[t]ime          - view time costs (in seconds)')
+        print('[c]ost          - view an estimated monetary cost')
         print('[r]outes        - view the routes (sequential addresses)')
         print('[e]xit          - exit this menu')
         print(' ')
@@ -576,6 +589,19 @@ def trace_info(client):
                     for j in info['route_names'][i]:
                         print(j)
                     print(' ')
+            input(':')
+        elif 'cost'.startswith(choice):
+            recset = input('use recommended settings?[y/n]: ')
+            if recset.lower() in ['y', 'yes', 'yeah', 'ye']:
+                settings = get_settings(client, preset=info['settings_used'])
+            else:
+                settings = get_settings(client)
+            cost_func = indep_cost_def(settings['cost_params']['labor'], settings['cost_params']['fuel'])
+            costs = cost_func(info['time'], info['fuel'])
+            for i in range(0, len(costs)):
+                cost = round(costs[i], 3)
+                if fuel != None:
+                    print(f'route {i}: ${cost}')
             input(':')
         elif 'polygon'.startswith(choice):
             disp_trace(client, [race], [info['poly']])
@@ -616,7 +642,22 @@ def trace_compare(client):
             ordered2 = sorted(second['time'], key=lambda x: (x is None, x))
             comp_print(ordered1, ordered2)
         elif 'cost'.startswith(choice):
-            print('not implemented')
+            recset = input('use recommended settings?[y/n]: ')
+            if recset.lower() in ['y', 'yes', 'yeah', 'ye']:
+                settings1 = get_settings(client, preset=first['settings_used'])
+                settings2 = get_settings(client, preset=second['settings_used'])
+            else:
+                print('route 1')
+                print('-------')
+                settings1 = get_settings(client)
+                print('route 2')
+                print('-------')
+                settings2 = get_settings(client)
+            cost_func1 = indep_cost_def(settings1['cost_params']['labor'], settings1['cost_params']['fuel'])
+            cost_func2 = indep_cost_def(settings2['cost_params']['labor'], settings2['cost_params']['fuel'])
+            costs1 = cost_func1(first['time'], first['fuel'])
+            costs2 = cost_func2(second['time'], second['fuel'])
+            comp_print(costs1, costs2)
         elif 'polygon'.startswith(choice):
             disp_trace(client, [race1, race2], [first['poly'], second['poly']])
         else:
