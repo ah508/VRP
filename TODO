@@ -1,8 +1,9 @@
-0) route management options. - workin' on it
-0a) manual route retracing. - workin' on it
-1) make a method for naive reoptimization for a single address insertion.
-2) add a means of reoptimizing from a pre-computed solution.
-3) clean everything up a bit.
+0) route management options. - done, kinda...
+0a) manual route retracing. - done
+1) biweekly strategy - workin' on it
+2) make a method for naive reoptimization for a single address insertion.
+3) add a means of reoptimizing from a pre-computed solution.
+4) clean everything up a bit.
 .
 .
 .
