@@ -74,9 +74,34 @@ def nonesum(iterable):
     val = sum([x for x in iterable if x != None])
     return val
 
-def get_settings(client):
-    sett = input('which settings would you like to use?: ')
-    path = os.getcwd() + '\\clients\\' + client + '\\route_info\\route_settings\\' + sett + '.json'
-    with open(path, 'r') as f:
-        settings = json.load(f)
-    return settings
+def cost_def(labor, fuel):
+    def cost_func(time_vec, fuel_vec):
+        labor_cost = sum([labor[i]*time_vec[i] for i in range(0, len(labor)) if time_vec[i] != None])
+        fuel_cost = sum([fuel[i]*fuel_vec[i] for i in range(0, len(fuel)) if fuel_vec[i] != None])
+        return labor_cost + fuel_cost
+    return cost_func
+
+def indep_cost_def(labor, fuel):
+    def cost_func(time_vec, fuel_vec):
+        labor_cost = [labor[i]*time_vec[i] if time_vec[i] != None else None for i in range(0, len(labor))]
+        fuel_cost = [fuel[i]*fuel_vec[i] if fuel_vec[i] != None else None for i in range(0, len(fuel))]
+        return [labor_cost[i] + fuel_cost[i] if labor_cost[i] != None else None for i in range(0, len(labor_cost))]
+    return cost_func
+
+def get_settings(client, preset=None):
+    if preset == None:
+        sett = input('which settings would you like to use?: ')
+    else:
+        sett = preset
+    try:
+        path = os.getcwd() + '\\clients\\' + client + '\\route_info\\route_settings\\' + sett + '.json'
+        with open(path, 'r') as f:
+            settings = json.load(f)
+    except FileNotFoundError:
+        print(f'"{sett}" settings file does not exist')
+        input('utilizing default settings')
+        sett = 'default'
+        path = os.getcwd() + '\\clients\\' + client + '\\route_info\\route_settings\\default.json'
+        with open(path, 'r') as f:
+            settings = json.load(f)
+    return settings, sett

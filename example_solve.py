@@ -1,5 +1,5 @@
 from info_work import get_working_map
-from useful_funcs import parse_addresses, parse_list, Setup, npencode, get_settings
+from useful_funcs import parse_addresses, parse_list, Setup, npencode, get_settings, cost_def
 import googlemaps
 from maps_api import fetch_new
 import os
@@ -28,7 +28,7 @@ def solve(client):
         ypoints.append(custinfo['lat'])
         xpoints.append(custinfo['lon'])
     add_vec = np.array(add_vec)
-    default = get_settings(client)
+    default, def_name = get_settings(client)
     points = Setup(dur, dist, add_vec, fuel_vec, xpoints, ypoints, default)
     initials = int(math.sqrt(len(points.xpoints))//2)
     forray = []
@@ -63,11 +63,13 @@ def solve(client):
             'distance matrix' : dist,
             'projection vector' : add_vec,
             # 'history' : history,
-            'solve parameters' : None
+            'solve parameters' : {
+                'settings' : def_name
+            }
         }
         n1 = 0
-        # savepath = os.getcwd()+'\\clients\\'+client+'\\route_info\\solution_dumps'
-        savepath = os.getcwd()+'\\clients\\'+client+'\\route_info'
+        savepath = os.getcwd()+'\\clients\\'+client+'\\route_info\\solution_dumps'
+        # savepath = os.getcwd()+'\\clients\\'+client+'\\route_info'
         while n1 < 10:
             name = input('give the solution a name: ') + '.json'
             if name in os.listdir(savepath):
@@ -187,12 +189,12 @@ def parse_history(history, point_set):
         parsed_hist.append(xy)
     return parsed_hist
 
-def cost_def(labor, fuel):
-    def cost_func(time_vec, fuel_vec):
-        labor_cost = sum([labor[i]*time_vec[i] for i in range(0, len(labor)) if time_vec[i] != None])
-        fuel_cost = sum([fuel[i]*fuel_vec[i] for i in range(0, len(fuel)) if fuel_vec[i] != None])
-        return labor_cost + fuel_cost
-    return cost_func
+# def cost_def(labor, fuel):
+#     def cost_func(time_vec, fuel_vec):
+#         labor_cost = sum([labor[i]*time_vec[i] for i in range(0, len(labor)) if time_vec[i] != None])
+#         fuel_cost = sum([fuel[i]*fuel_vec[i] for i in range(0, len(fuel)) if fuel_vec[i] != None])
+#         return labor_cost + fuel_cost
+#     return cost_func
 
 
 ############################################################################################      
