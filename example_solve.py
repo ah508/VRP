@@ -28,7 +28,7 @@ def solve(client):
         ypoints.append(custinfo['lat'])
         xpoints.append(custinfo['lon'])
     add_vec = np.array(add_vec)
-    default, def_name = get_settings(client)
+    default = get_settings(client) 
     points = Setup(dur, dist, add_vec, fuel_vec, xpoints, ypoints, default)
     initials = int(math.sqrt(len(points.xpoints))//2)
     forray = []
@@ -64,7 +64,7 @@ def solve(client):
             'projection vector' : add_vec,
             # 'history' : history,
             'solve parameters' : {
-                'settings' : def_name
+                'settings' : default
             }
         }
         n1 = 0

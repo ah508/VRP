@@ -104,4 +104,4 @@ def get_settings(client, preset=None):
         path = os.getcwd() + '\\clients\\' + client + '\\route_info\\route_settings\\default.json'
         with open(path, 'r') as f:
             settings = json.load(f)
-    return settings, sett
+    return settings

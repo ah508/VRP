@@ -261,7 +261,7 @@ def get_working_map(client):
 
     distance = parse_array(client, 'distance')
     duration = parse_array(client, 'time')
-    addresses, omitted, working = parse_addresses(client)
+    addresses, _, working = parse_addresses(client)
     backmap = []
     for i in range(0, len(addresses)):
         if addresses[i] in working:
@@ -359,18 +359,14 @@ def solve_pretrace(client):
         else:
             print('that was not valid input')
     p = 'best ' + feas
-    poly = sol_info[p]['poly'][0]
-    timestamp = sol_info['timestamp']
-    f_cost = sol_info[p]['fuel']
-    t_cost = sol_info[p]['time']
     trace_r, trace_n = solve_retrace(sol_info[p]['sol'], sol_info['map'], sol_info['address list'])
     final_trace = {
-        'timestamp' : timestamp,
+        'timestamp' : sol_info['timestamp'],
         'source' : sol_path,
         'settings_used' : sol_info['solve parameters']['settings'],
-        'poly' : poly,
-        'fuel' : f_cost,
-        'time' : t_cost,
+        'poly' : sol_info[p]['poly'][0],
+        'fuel' : sol_info[p]['fuel'],
+        'time' : sol_info[p]['time'],
         'route_nums' : trace_r,
         'route_names' : trace_n
     }
@@ -417,7 +413,7 @@ def solve_retrace(routes, backmap, addresses):
     return rerouted, renamed
 
 def manual_retrace(client):
-    customers, omissions, working = parse_addresses(client)
+    customers, _, _ = parse_addresses(client)
     routes = []
     names = []
     print('customer list')
@@ -456,7 +452,7 @@ def locgrab(customers):
             if len(filtered) == 1:
                 truloc = filtered[0]
                 truloc_index = customers.index(truloc)
-            elif len(filtered) == 0 and loc == '':
+            elif len(filtered) == 0 and loc in  [' ', 'NONE']:
                 truloc = None
                 truloc_index = None
             else:
@@ -470,8 +466,8 @@ def locgrab(customers):
 def manual_cost_trace(client, routes):
     distance = parse_array(client, 'distance')
     duration = parse_array(client, 'time')
-    customers, omitted, working = parse_addresses(client)
-    settings, name = get_settings(client)
+    customers, _, _ = parse_addresses(client)
+    settings = get_settings(client)
     add_vec = []
     fuel_vec = []
     xpoints = []
@@ -489,6 +485,8 @@ def manual_cost_trace(client, routes):
     f_cost = [0] * len(routes)
     poly = []
     for i in range(0, len(routes)):
+        if routes[i] == []:
+            continue
         init_app = np.array([points.xpoints[routes[i][0]], points.ypoints[routes[i][0]]])
         for j in range(0, len(routes[i])-1):
             try:
@@ -503,7 +501,12 @@ def manual_cost_trace(client, routes):
             poly = np.vstack((poly, init_app))
         except ValueError:
             poly = init_app
-    return t_cost, f_cost, poly, name
+    for i in range(len(routes)):
+        if t_cost[i] == 0:
+            t_cost[i] = None
+        if f_cost[i] == 0:
+            f_cost[i] = None
+    return t_cost, f_cost, poly, settings
 
 def retrace(client):
     while True:
@@ -593,7 +596,7 @@ def trace_info(client):
         elif 'cost'.startswith(choice):
             recset = input('use recommended settings?[y/n]: ')
             if recset.lower() in ['y', 'yes', 'yeah', 'ye']:
-                settings = get_settings(client, preset=info['settings_used'])
+                settings = info['settings_used']
             else:
                 settings = get_settings(client)
             cost_func = indep_cost_def(settings['cost_params']['labor'], settings['cost_params']['fuel'])
@@ -644,8 +647,8 @@ def trace_compare(client):
         elif 'cost'.startswith(choice):
             recset = input('use recommended settings?[y/n]: ')
             if recset.lower() in ['y', 'yes', 'yeah', 'ye']:
-                settings1 = get_settings(client, preset=first['settings_used'])
-                settings2 = get_settings(client, preset=second['settings_used'])
+                settings1 = first['settings_used']
+                settings2 = second['settings_used']
             else:
                 print('route 1')
                 print('-------')

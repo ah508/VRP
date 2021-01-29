@@ -66,7 +66,7 @@ def instantiate_data(cur_client, customer_list):
 
 def fetch_new(cur_client, customer):
     path = os.getcwd() + '\\clients\\' + cur_client
-    addresses, omitted, working = parse_addresses(cur_client)
+    addresses, _, _ = parse_addresses(cur_client)
     gmap = googlemaps.Client(key=key)
     origin = customer
     destinations = addresses
@@ -81,7 +81,7 @@ def fetch_new(cur_client, customer):
 
 def new_data(cur_client, customer):
     path = os.getcwd() + '\\clients\\' + cur_client
-    addresses, omitted, working = parse_addresses(cur_client)
+    addresses, omitted, _ = parse_addresses(cur_client)
     with open(path + '\\infodump_vert.json', 'r') as f:
         vertical = json.load(f)
     if vertical['destination_addresses'][0] != '':
