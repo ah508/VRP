@@ -63,7 +63,7 @@ while True:
         print(' ')
 
     elif 'weather'.startswith(choice):
-        pass
+        print('not implemented')
 
     elif 'solve'.startswith(choice):
         solve(cur_client)

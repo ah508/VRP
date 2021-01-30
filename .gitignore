@@ -7,5 +7,6 @@ mapinterface.py
 weatherinterface.py
 .vscode/*
 clients/*
+!clients/demo2
 testdump.json
 weatherdump.json
